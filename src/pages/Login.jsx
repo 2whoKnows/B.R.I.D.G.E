@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { logActivity } from '../lib/Logactivity'
@@ -28,6 +28,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
+  const [resetLoading, setResetLoading] = useState(false)
+  const [showResetModal, setShowResetModal] = useState(false)
 
   const redirectByRole = (role) => {
     if (role === 'admin') {
@@ -114,12 +116,42 @@ export default function Login() {
     }
   }
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault()
+    setError('')
+
+    if (!email.trim()) {
+      setError('Enter your email above first, then click "Forgot Password?"')
+      return
+    }
+
+    setResetLoading(true)
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        email.trim(),
+        { redirectTo: `${window.location.origin}/reset-password` }
+      )
+
+      if (resetError) {
+        setError('Could not send reset email. Try again.')
+        return
+      }
+
+      setShowResetModal(true)
+    } catch (err) {
+      console.error('Forgot password error:', err)
+      setError('Something went wrong. Try again.')
+    } finally {
+      setResetLoading(false)
+    }
+  }
+
   return (
     <div className="login-page">
       <div className="login-card">
         <img src={logo} alt="H2KNOW" className="login-logo" />
         <h1 className="login-title">
-          H<sub>2</sub>KNOW
+          B.R.I.D.G.E
         </h1>
         <p className="login-tagline">Know the Flow, Before You Go</p>
         <span className="login-badge">Authorized Personnel Only</span>
@@ -169,9 +201,14 @@ export default function Login() {
               />
               Remember me
             </label>
-            <Link to="/forgot-password" className="login-forgot-link">
-              Forgot Password?
-            </Link>
+            <button
+              type="button"
+              className="login-forgot-link"
+              onClick={handleForgotPassword}
+              disabled={resetLoading}
+            >
+              {resetLoading ? 'Sending…' : 'Forgot Password?'}
+            </button>
           </div>
 
           <button type="submit" className="login-submit-btn" disabled={loading}>
@@ -193,6 +230,25 @@ export default function Login() {
           {googleLoading ? 'Redirecting…' : 'Sign in with Google'}
         </button>
       </div>
+
+      {showResetModal && (
+        <div className="login-modal-overlay" onClick={() => setShowResetModal(false)}>
+          <div className="login-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="login-modal-icon">✓</div>
+            <h2 className="login-modal-title">Reset Link Sent</h2>
+            <p className="login-modal-text">
+              A password reset link has been sent to <strong>{email.trim()}</strong>. Check your inbox.
+            </p>
+            <button
+              type="button"
+              className="login-modal-btn"
+              onClick={() => setShowResetModal(false)}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
