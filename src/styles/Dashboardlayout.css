@@ -1,0 +1,122 @@
+.dl-shell {
+  min-height: 100vh;
+  background: #f3f6fa;
+}
+
+.dl-main {
+  margin-left: var(--sb-width, 248px);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.dl-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.8rem;
+  background: #ffffff;
+  border-bottom: 1px solid #e7edf3;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.dl-topbar-title h1 {
+  font-size: 1.32rem;
+  font-weight: 700;
+  color: #14273b;
+  margin: 0;
+}
+.dl-topbar-title p {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+  color: #6b7f92;
+}
+
+.dl-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.dl-date-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: #4c6072;
+  background: #f0f4f8;
+  border: 1px solid #e2e9f0;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.dl-date-chip svg { width: 15px; height: 15px; }
+
+.dl-bell {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  border: 1px solid #e2e9f0;
+  background: #fff;
+  color: #4c6072;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.dl-bell svg { width: 18px; height: 18px; }
+
+.dl-user-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #17293b;
+  white-space: nowrap;
+}
+
+.dl-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #eaf2fb;
+  color: var(--sb-navy, #0a3d62);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dl-user-avatar svg { width: 17px; height: 17px; }
+
+.dl-content {
+  padding: 1.6rem 1.8rem 2.4rem;
+  flex: 1;
+}
+
+@media (max-width: 900px) {
+  .dl-main {
+    margin-left: 0;
+  }
+  .dl-topbar {
+    padding: 0.85rem 1rem 0.85rem 3.6rem;
+  }
+  .dl-topbar-title h1 {
+    font-size: 1.08rem;
+  }
+  .dl-date-chip span,
+  .dl-date-chip {
+    display: none;
+  }
+  .dl-content {
+    padding: 1.1rem 1rem 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dl-user-chip span:last-child {
+    display: none;
+  }
+}
