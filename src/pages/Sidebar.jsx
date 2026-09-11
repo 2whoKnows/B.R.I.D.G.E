@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 import "../styles/Sidebar.css";
 
 const NAV_ITEMS = [
@@ -38,6 +39,13 @@ function Icon({ name }) {
         <path d="M19.4 13.5a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V19.5a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H4.5a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H10a1.7 1.7 0 0 0 1-1.55V4.5a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V10a1.7 1.7 0 0 0 1.55 1H19.5a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z" />
       </>
     ),
+    logout: (
+      <>
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+        <path d="M16 17l5-5-5-5" />
+        <path d="M21 12H9" />
+      </>
+    ),
   };
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="sb-icon">
@@ -51,11 +59,38 @@ export default function Sidebar({
   institutionLabel = "Institution",
   activeKey = "dashboard",
   onNavigate,
-  managerName = "Manager",
   onLogout,
 }) {
   const [open, setOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const navigate = useNavigate();
+
+  // Lock background scroll while the mobile drawer is open.
+  useEffect(() => {
+    if (!open) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
+  // Close on Escape, and auto-close if the viewport grows back to desktop size.
+  useEffect(() => {
+    if (!open) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    const handleResize = () => {
+      if (window.innerWidth > 900) setOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [open]);
 
   const handleNav = (key) => {
     const item = NAV_ITEMS.find((navItem) => navItem.key === key);
@@ -66,6 +101,29 @@ export default function Sidebar({
     }
 
     onNavigate?.(key);
+  };
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      if (onLogout) {
+        await onLogout();
+        return;
+      }
+
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Sidebar logout failed:", error);
+      navigate("/login", { replace: true });
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
   return (
@@ -106,11 +164,13 @@ export default function Sidebar({
         </div>
 
         <nav className="sb-nav">
+          <span className="sb-nav-label">Menu</span>
           {NAV_ITEMS.map((item) => (
             <button
               key={item.key}
               className={`sb-nav-item ${activeKey === item.key ? "sb-active" : ""}`}
               onClick={() => handleNav(item.key)}
+              aria-current={activeKey === item.key ? "page" : undefined}
             >
               <Icon name={item.icon} />
               <span>{item.label}</span>
@@ -118,18 +178,18 @@ export default function Sidebar({
           ))}
         </nav>
 
-        <button className="sb-user" onClick={onLogout}>
-          <span className="sb-avatar">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-              <circle cx="12" cy="8" r="3.5" />
-              <path d="M4.5 20c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5" />
-            </svg>
-          </span>
-          <span className="sb-user-text">
-            <span className="sb-user-name">{managerName}</span>
-            <span className="sb-user-role">Document Manager</span>
-          </span>
-        </button>
+        <div className="sb-footer">
+          <button
+            className="sb-logout-btn"
+            onClick={handleLogout}
+            type="button"
+            disabled={loggingOut}
+            aria-label="Log out"
+          >
+            <Icon name="logout" />
+            <span>{loggingOut ? "Logging out…" : "Log out"}</span>
+          </button>
+        </div>
       </aside>
     </>
   );

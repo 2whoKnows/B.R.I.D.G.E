@@ -32,9 +32,9 @@ export default function Login() {
   const [showResetModal, setShowResetModal] = useState(false)
 
   const redirectByRole = (role) => {
-    if (role === 'admin') {
+    if (role === 'system_admin') {
       navigate('/admin/dashboard')
-    } else if (role === 'manager') {
+    } else if (role === 'document_manager' || role === 'teacher') {
       navigate('/manager/dashboard')
     } else {
       navigate('/')
@@ -65,7 +65,7 @@ export default function Login() {
       const userId = data.user.id
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('role, status')
+        .select('role, is_active')
         .eq('id', userId)
         .single()
 
@@ -75,14 +75,8 @@ export default function Login() {
         return
       }
 
-      if (profile.status === 'pending') {
-        setError('Your account is awaiting approval.')
-        await supabase.auth.signOut()
-        return
-      }
-
-      if (profile.status === 'rejected') {
-        setError('Your account access was denied. Contact an administrator.')
+      if (profile.is_active === false) {
+        setError('Your account is inactive. Contact an administrator.')
         await supabase.auth.signOut()
         return
       }

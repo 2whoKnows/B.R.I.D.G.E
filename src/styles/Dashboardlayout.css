@@ -8,6 +8,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  padding-top: 76px;
 }
 
 .dl-topbar {
@@ -15,12 +16,23 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  min-height: 64px;
   padding: 1.1rem 1.8rem;
   background: #ffffff;
   border-bottom: 1px solid #e7edf3;
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: var(--sb-width, 248px);
+  right: 0;
   z-index: 20;
+  width: auto;
+}
+
+.dl-topbar-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .dl-topbar-title h1 {
@@ -99,9 +111,19 @@
 @media (max-width: 900px) {
   .dl-main {
     margin-left: 0;
+    padding-top: 64px;
   }
   .dl-topbar {
-    padding: 0.85rem 1rem 0.85rem 3.6rem;
+    min-height: 58px;
+    padding: 0.8rem 0.9rem;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+  .dl-topbar-title {
+    align-items: center;
+    gap: 0.45rem;
   }
   .dl-topbar-title h1 {
     font-size: 1.08rem;
@@ -116,6 +138,12 @@
 }
 
 @media (max-width: 480px) {
+  .dl-topbar {
+    padding: 0.8rem 0.9rem;
+  }
+  .dl-topbar-title h1 {
+    font-size: 1rem;
+  }
   .dl-user-chip span:last-child {
     display: none;
   }

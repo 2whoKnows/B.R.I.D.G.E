@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { getPasswordStrength } from '../lib/passwordStrength'
 import logo from '../assets/logo.png'
 import '../styles/ResetPassword.css'
 
@@ -14,6 +15,8 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
+
+  const strength = getPasswordStrength(password)
 
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange((event) => {
@@ -37,7 +40,10 @@ export default function ResetPassword() {
       setError('Password must be at least 6 characters.')
       return
     }
-
+    if (strength.score < 2) {
+      setError('Please choose a stronger password.')
+      return
+    }
     if (password !== confirmPassword) {
       setError('Passwords do not match.')
       return
@@ -45,11 +51,17 @@ export default function ResetPassword() {
 
     setLoading(true)
     try {
-      const { error: updateError } = await supabase.auth.updateUser({ password })
+      const { data: { user }, error: updateError } = await supabase.auth.updateUser({ password })
 
       if (updateError) {
         setError('Could not update password. Try again.')
         return
+      }
+
+      // Mark the profile as having a password set — matters for users who
+      // originally signed up via Google and are resetting/creating one here.
+      if (user) {
+        await supabase.from('profiles').update({ password_set: true }).eq('id', user.id)
       }
 
       setDone(true)
@@ -101,6 +113,25 @@ export default function ResetPassword() {
               </button>
             </div>
 
+            {password && (
+              <div className="reset-strength">
+                <div className="reset-strength-bar">
+                  {[0, 1, 2, 3].map((i) => (
+                    <span
+                      key={i}
+                      className="reset-strength-seg"
+                      style={{
+                        backgroundColor: i < strength.score ? strength.color : '#e2e9f0',
+                      }}
+                    />
+                  ))}
+                </div>
+                <span className="reset-strength-label" style={{ color: strength.color }}>
+                  {strength.label}
+                </span>
+              </div>
+            )}
+
             <label className="reset-label" htmlFor="confirmPassword">Confirm Password</label>
             <input
               id="confirmPassword"
@@ -111,6 +142,9 @@ export default function ResetPassword() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               autoComplete="new-password"
             />
+            {confirmPassword && password !== confirmPassword && (
+              <span className="reset-mismatch">Passwords don't match yet</span>
+            )}
 
             <button type="submit" className="reset-submit-btn" disabled={loading}>
               {loading ? 'Updating…' : 'UPDATE PASSWORD'}

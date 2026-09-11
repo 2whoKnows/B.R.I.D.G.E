@@ -1,13 +1,12 @@
 import { supabase } from "./supabase";
 
 /**
- * These queries assume a schema along the lines of:
- *   documents      (id, title, uploaded_at, download_count, ...)
- *   users          (id, full_name, role, created_at)  -- role: 'teacher' | 'manager' | ...
- *   activity_log   (id, user_id, action, document_id, created_at)
- *
- * Rename tables/columns below to match your actual Supabase schema.
- * Everything here reads live data — nothing is hardcoded.
+ * Dashboard queries aligned to the schema in the project SQL.
+ * Relevant tables:
+ *   public.documents
+ *   public.profiles
+ *   public.activity_logs
+ *   public.download_logs
  */
 
 // --- Top stat cards ---------------------------------------------------
@@ -16,24 +15,26 @@ export async function getTotalDocuments() {
   const { count, error } = await supabase
     .from("documents")
     .select("*", { count: "exact", head: true });
+
   if (error) throw error;
   return count ?? 0;
 }
 
 export async function getTotalTeachers() {
   const { count, error } = await supabase
-    .from("users")
+    .from("profiles")
     .select("*", { count: "exact", head: true })
     .eq("role", "teacher");
+
   if (error) throw error;
   return count ?? 0;
 }
 
 export async function getTotalDownloads() {
   const { count, error } = await supabase
-    .from("activity_log")
-    .select("*", { count: "exact", head: true })
-    .eq("action", "download");
+    .from("download_logs")
+    .select("*", { count: "exact", head: true });
+
   if (error) throw error;
   return count ?? 0;
 }
@@ -44,10 +45,10 @@ export async function getDownloadsThisMonth() {
   start.setHours(0, 0, 0, 0);
 
   const { count, error } = await supabase
-    .from("activity_log")
+    .from("download_logs")
     .select("*", { count: "exact", head: true })
-    .eq("action", "download")
-    .gte("created_at", start.toISOString());
+    .gte("downloaded_at", start.toISOString());
+
   if (error) throw error;
   return count ?? 0;
 }
@@ -58,17 +59,17 @@ export async function getMonthlyDownloadAnalytics() {
   const yearStart = new Date(new Date().getFullYear(), 0, 1).toISOString();
 
   const { data, error } = await supabase
-    .from("activity_log")
-    .select("created_at")
-    .eq("action", "download")
-    .gte("created_at", yearStart);
+    .from("download_logs")
+    .select("downloaded_at")
+    .gte("downloaded_at", yearStart);
+
   if (error) throw error;
 
   const monthLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const counts = new Array(12).fill(0);
 
   (data ?? []).forEach((row) => {
-    const m = new Date(row.created_at).getMonth();
+    const m = new Date(row.downloaded_at).getMonth();
     counts[m] += 1;
   });
 
@@ -83,28 +84,50 @@ export async function getMonthlyDownloadAnalytics() {
 export async function getMostDownloadedDocuments(limit = 5) {
   const { data, error } = await supabase
     .from("documents")
-    .select("id, title, download_count")
-    .order("download_count", { ascending: false })
+    .select("id, title, total_downloads")
+    .order("total_downloads", { ascending: false })
     .limit(limit);
+
   if (error) throw error;
-  return data ?? [];
+
+  return (data ?? []).map((doc) => ({
+    ...doc,
+    download_count: doc.total_downloads ?? 0,
+  }));
 }
 
 // --- Recent activity feed ----------------------------------------------
 
 export async function getRecentActivity(limit = 6) {
   const { data, error } = await supabase
-    .from("activity_log")
-    .select("id, action, created_at, users(full_name), documents(title)")
+    .from("activity_logs")
+    .select("id, action, created_at, user_id, document_id")
     .order("created_at", { ascending: false })
     .limit(limit);
+
   if (error) throw error;
 
-  return (data ?? []).map((row) => ({
+  const rows = data ?? [];
+  const userIds = [...new Set(rows.map((row) => row.user_id).filter(Boolean))];
+  const documentIds = [...new Set(rows.map((row) => row.document_id).filter(Boolean))];
+
+  const [usersResult, documentsResult] = await Promise.all([
+    userIds.length
+      ? supabase.from("profiles").select("id, full_name").in("id", userIds)
+      : Promise.resolve({ data: [] }),
+    documentIds.length
+      ? supabase.from("documents").select("id, title").in("id", documentIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const usersById = new Map((usersResult.data ?? []).map((user) => [user.id, user.full_name]));
+  const documentsById = new Map((documentsResult.data ?? []).map((doc) => [doc.id, doc.title]));
+
+  return rows.map((row) => ({
     id: row.id,
-    user: row.users?.full_name ?? "Unknown",
+    user: usersById.get(row.user_id) ?? "Unknown",
     action: row.action,
-    document: row.documents?.title ?? "—",
+    document: documentsById.get(row.document_id) ?? "—",
     time: row.created_at,
   }));
 }

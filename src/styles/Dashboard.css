@@ -102,10 +102,13 @@
 
 /* Table */
 .db-table-wrap {
+  width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .db-table {
   width: 100%;
+  min-width: 620px;
   border-collapse: collapse;
   font-size: 0.85rem;
 }
@@ -237,4 +240,13 @@
   .db-stats-grid { grid-template-columns: 1fr; }
   .db-panel { padding: 1rem; }
   .db-stat-value { font-size: 1.25rem; }
+  .db-table {
+    min-width: 540px;
+    font-size: 0.8rem;
+  }
+  .db-table thead th,
+  .db-table tbody td {
+    padding-left: 0.45rem;
+    padding-right: 0.45rem;
+  }
 }

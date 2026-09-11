@@ -68,19 +68,12 @@ export default function Dashboard({ managerName = "Manager" }) {
     };
   }, []);
 
-  const todayLabel = new Date().toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-
   return (
     <DashboardLayout
       activeKey="dashboard"
       managerName={managerName}
       pageTitle="Dashboard"
       pageSubtitle={`Welcome back, ${managerName}!`}
-      dateLabel={`Today, ${todayLabel}`}
     >
       {error && <div className="db-error">{error}</div>}
 
