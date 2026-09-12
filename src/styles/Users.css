@@ -1,0 +1,111 @@
+.usr-error {
+  background: #fdecec;
+  border: 1px solid #f4c2c2;
+  color: #9c2b2b;
+  padding: 0.75rem 1rem;
+  border-radius: 9px;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.usr-panel {
+  background: #fff;
+  border: 1px solid #e7edf3;
+  border-radius: 14px;
+  padding: 0.4rem;
+}
+
+.usr-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.usr-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.usr-table thead th {
+  text-align: left;
+  color: #8497a8;
+  font-weight: 600;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.7rem 0.8rem;
+  border-bottom: 1px solid #eef2f6;
+  white-space: nowrap;
+}
+
+.usr-table tbody td {
+  padding: 0.65rem 0.8rem;
+  border-bottom: 1px solid #f2f5f8;
+  color: #2b3d4f;
+  white-space: nowrap;
+}
+
+.usr-td-name { font-weight: 600; color: #17293b; }
+.usr-td-email { color: #4c6072; }
+.usr-td-time { color: #8497a8; }
+
+.usr-role-select {
+  padding: 6px 10px;
+  border-radius: 7px;
+  border: 1px solid #dbe7ee;
+  background: #f5fbff;
+  font-size: 0.8rem;
+  color: #052a3f;
+  cursor: pointer;
+}
+.usr-role-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.usr-status-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.usr-status-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.usr-status-active {
+  background: #e6f7ee;
+  color: #218a5a;
+}
+.usr-status-inactive {
+  background: #fdecec;
+  color: #9c2b2b;
+}
+
+.usr-empty-cell {
+  text-align: center;
+  color: #8497a8;
+  padding: 1.5rem;
+}
+
+.usr-skeleton {
+  display: block;
+  height: 1.2rem;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #f0f3f7 25%, #e7edf3 37%, #f0f3f7 63%);
+  background-size: 400% 100%;
+  animation: usr-shimmer 1.4s ease infinite;
+}
+@keyframes usr-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: 0 0; }
+}
+
+@media (max-width: 560px) {
+  .usr-table { min-width: 560px; font-size: 0.8rem; }
+}

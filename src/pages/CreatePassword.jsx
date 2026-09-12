@@ -17,9 +17,9 @@ export default function CreatePassword() {
   const strength = getPasswordStrength(password)
 
   const redirectByRole = (role) => {
-    if (role === 'admin') {
+    if (role === 'system_admin') {
       navigate('/admin/dashboard', { replace: true })
-    } else if (role === 'manager') {
+    } else if (role === 'document_manager' || role === 'teacher') {
       navigate('/manager/dashboard', { replace: true })
     } else {
       navigate('/', { replace: true })

@@ -30,8 +30,8 @@
 
 .dl-topbar-title {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 0.15rem;
   min-width: 0;
 }
 
@@ -42,7 +42,7 @@
   margin: 0;
 }
 .dl-topbar-title p {
-  margin: 0.15rem 0 0;
+  margin: 0;
   font-size: 0.85rem;
   color: #6b7f92;
 }
@@ -120,10 +120,6 @@
     top: 0;
     left: 0;
     right: 0;
-  }
-  .dl-topbar-title {
-    align-items: center;
-    gap: 0.45rem;
   }
   .dl-topbar-title h1 {
     font-size: 1.08rem;
