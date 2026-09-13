@@ -1,99 +1,228 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { Search, Download, FileText, BookOpen, ClipboardList, LayoutTemplate } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
-import { getCategories as listCategories, listDocuments } from "../lib/documentQueries";
-import "../styles/TeacherPortal.css";
-
-const CATEGORY_ICONS = {
-  Rubrics: FileText,
-  Guidelines: BookOpen,
-  Templates: LayoutTemplate,
-  Forms: ClipboardList,
-};
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Search, 
+  FileText, 
+  Star, 
+  Eye, 
+  Download, 
+  Clock, 
+  Folder, 
+  ArrowRight,
+  Sparkles
+} from 'lucide-react';
+import { listDocuments, getCategories, recordView, downloadDocument } from '../lib/documentQueries';
+import { useAuth } from '../context/AuthContext';
+import '../styles/Pages.css';
 
 export default function TeacherDashboard() {
-  const { profile } = useAuth();
-  const [search, setSearch] = useState("");
+  const navigate = useNavigate();
+  const { profile, role } = useAuth();
+  const [documents, setDocuments] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [recentDocuments, setRecentDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [favorites, setFavorites] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('bridge_teacher_favorites')) || [];
+    } catch {
+      return [];
+    }
+  });
 
   useEffect(() => {
-    async function load() {
-      setLoading(true);
-      const [cats, docs] = await Promise.all([
-        listCategories(),
-        listDocuments({ page: 1, pageSize: 5 }),
-      ]);
-      setCategories(cats);
-      setRecentDocuments(docs.documents);
-      setLoading(false);
+    async function loadData() {
+      try {
+        setLoading(true);
+        const [docRes, catRes] = await Promise.all([
+          listDocuments({ pageSize: 50 }),
+          getCategories()
+        ]);
+        setDocuments(docRes.documents || []);
+        setCategories(catRes || []);
+      } catch (err) {
+        console.error('Failed to load teacher dashboard:', err);
+      } finally {
+        setLoading(false);
+      }
     }
-    load().catch(() => setLoading(false));
+    loadData();
   }, []);
 
+  const toggleFavorite = (docId, e) => {
+    e?.stopPropagation();
+    let updated;
+    if (favorites.includes(docId)) {
+      updated = favorites.filter(id => id !== docId);
+    } else {
+      updated = [...favorites, docId];
+    }
+    setFavorites(updated);
+    localStorage.setItem('bridge_teacher_favorites', JSON.stringify(updated));
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/teacher/documents?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const favoritedDocs = documents.filter(d => favorites.includes(d.id));
+  const recentlyAdded = [...documents].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 4);
+
   return (
-    <div className="teacher-page space-y-8">
-      <div>
-        <h1 className="text-xl font-semibold text-ink-900">
-          Good morning, {profile?.full_name ?? "[Teacher Name]"}!
-        </h1>
-        <p className="text-sm text-ink-400">Find the documents you need for your work.</p>
-      </div>
-
-      <div className="relative">
-        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-400" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search documents, categories, or keywords..."
-          className="w-full rounded-control border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm shadow-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-        />
-      </div>
-
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-ink-900">Browse by Category</h2>
-          <Link to="/teacher/documents" className="text-xs font-medium text-accent">View All</Link>
+    <div className="page-container">
+      {/* Welcome Banner & Search Hero */}
+      <div className="welcome-banner" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '20px' }}>
+        <div>
+          <h2 className="welcome-title">Welcome back, {profile?.full_name || 'Faculty Member'}</h2>
+          <p className="welcome-subtitle">Search and access verified institutional syllabi, exam templates, and academic guidelines.</p>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {(loading ? Array.from({ length: 4 }) : categories).map((cat, i) => {
-            const Icon = CATEGORY_ICONS[cat?.name] ?? FileText;
-            return (
-              <Link key={cat?.id ?? i} to={`/teacher/documents?category=${cat?.id ?? ""}`} className="flex items-center gap-3 rounded-card border border-slate-100 bg-white p-4 shadow-sm hover:border-accent/40">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/10 text-accent"><Icon size={16} /></div>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-ink-900">{cat?.name ?? "—"}</p>
-                  <p className="text-xs text-ink-400">{cat?.docCount ?? "—"} documents</p>
+
+        {/* Large Prominent Document Search Bar */}
+        <form onSubmit={handleSearchSubmit} className="search-hero-wrap" style={{ position: 'relative', width: '100%' }}>
+          <Search style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} size={22} />
+          <input
+            type="text"
+            className="search-input"
+            style={{
+              padding: '16px 20px 16px 52px',
+              fontSize: '1rem',
+              borderRadius: '14px',
+              backgroundColor: '#FFFFFF',
+              border: 'none',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)'
+            }}
+            placeholder="Search all institutional documents, course codes, or titles..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <button 
+            type="submit" 
+            className="btn-primary" 
+            style={{ position: 'absolute', right: '8px', top: '8px', bottom: '8px', padding: '0 20px', borderRadius: '10px' }}
+          >
+            Search
+          </button>
+        </form>
+
+        {/* Interactive Category Pills */}
+        <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
+          <button 
+            className={`badge ${!selectedCategory ? 'badge-blue' : 'badge-gray'}`}
+            style={{ padding: '8px 16px', fontSize: '0.8125rem', cursor: 'pointer' }}
+            onClick={() => setSelectedCategory(null)}
+          >
+            All Categories
+          </button>
+          {categories.map(cat => (
+            <button
+              key={cat.id}
+              className={`badge ${selectedCategory === cat.id ? 'badge-blue' : 'badge-gray'}`}
+              style={{ padding: '8px 16px', fontSize: '0.8125rem', cursor: 'pointer' }}
+              onClick={() => setSelectedCategory(cat.id)}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Quick Access & Favorite Documents */}
+      {favoritedDocs.length > 0 && (
+        <div className="bridge-card">
+          <div className="card-header">
+            <span className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Star size={18} color="#EAB308" fill="#EAB308" /> Favorite Documents Quick Access
+            </span>
+            <button className="btn-secondary" style={{ fontSize: '0.75rem' }} onClick={() => navigate('/teacher/favorites')}>
+              View All Favorites ({favoritedDocs.length})
+            </button>
+          </div>
+
+          <div className="doc-grid">
+            {favoritedDocs.slice(0, 3).map(doc => (
+              <div key={doc.id} className="doc-card" onClick={() => navigate(`/teacher/documents/${doc.id}`)} style={{ cursor: 'pointer' }}>
+                <div>
+                  <div className="doc-card-header">
+                    <span className="badge badge-blue">{doc.categories?.name || 'Academic'}</span>
+                    <button 
+                      onClick={(e) => toggleFavorite(doc.id, e)} 
+                      style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                    >
+                      <Star size={18} color="#EAB308" fill="#EAB308" />
+                    </button>
+                  </div>
+                  <h3 className="doc-title" style={{ marginTop: '10px' }}>{doc.title}</h3>
+                  <p className="doc-desc" style={{ marginTop: '6px' }}>{doc.description || 'Verified document.'}</p>
                 </div>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
 
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-ink-900">Recent Documents</h2>
-          <Link to="/teacher/documents" className="text-xs font-medium text-accent">View All</Link>
-        </div>
-        <div className="divide-y divide-slate-100 rounded-card border border-slate-100 bg-white shadow-sm">
-          {(loading ? Array.from({ length: 3 }) : recentDocuments).map((doc, i) => (
-            <div key={doc?.id ?? i} className="flex items-center justify-between gap-4 px-4 py-3">
-              <div className="flex min-w-0 items-center gap-3">
-                <FileText size={18} className="shrink-0 text-ink-400" />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-ink-900">{doc?.title ?? "Loading…"}</p>
-                  <p className="truncate text-xs text-ink-400">{doc?.categories?.name ?? ""} · {doc ? new Date(doc.created_at).toLocaleDateString() : ""}</p>
+                <div className="doc-card-actions">
+                  <span style={{ fontSize: '0.75rem', color: '#64748B' }}>v{doc.version || 1} • {doc.file_type || 'PDF'}</span>
+                  <button className="btn-primary" style={{ padding: '6px 12px', fontSize: '0.75rem' }}>
+                    <Eye size={14} /> Preview
+                  </button>
                 </div>
               </div>
-              <Link to={doc ? `/teacher/documents/${doc.id}` : "#"} className="flex shrink-0 items-center gap-1.5 rounded-control bg-navy-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-navy-800"><Download size={14} /> Download</Link>
-            </div>
-          ))}
-          {!loading && recentDocuments.length === 0 && <p className="px-4 py-6 text-center text-sm text-ink-400">No documents yet.</p>}
+            ))}
+          </div>
         </div>
-      </section>
+      )}
+
+      {/* Recently Added Documents */}
+      <div className="bridge-card">
+        <div className="card-header">
+          <span className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Sparkles size={18} color="#2563EB" /> Recently Added Documents
+          </span>
+          <button className="btn-secondary" style={{ fontSize: '0.75rem' }} onClick={() => navigate('/teacher/documents')}>
+            Browse Library <ArrowRight size={14} />
+          </button>
+        </div>
+
+        <div className="doc-grid">
+          {loading ? (
+            <div style={{ color: '#94A3B8', fontSize: '0.875rem' }}>Loading documents...</div>
+          ) : recentlyAdded.length === 0 ? (
+            <div style={{ color: '#94A3B8', fontSize: '0.875rem' }}>No recent documents available.</div>
+          ) : (
+            recentlyAdded.map(doc => {
+              const isFav = favorites.includes(doc.id);
+              return (
+                <div 
+                  key={doc.id} 
+                  className="doc-card"
+                  onClick={() => navigate(`/teacher/documents/${doc.id}`)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div>
+                    <div className="doc-card-header">
+                      <span className="badge badge-blue">{doc.categories?.name || 'General'}</span>
+                      <button 
+                        onClick={(e) => toggleFavorite(doc.id, e)} 
+                        style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                      >
+                        <Star size={18} color={isFav ? '#EAB308' : '#CBD5E1'} fill={isFav ? '#EAB308' : 'none'} />
+                      </button>
+                    </div>
+                    <h3 className="doc-title" style={{ marginTop: '10px' }}>{doc.title}</h3>
+                    <p className="doc-desc" style={{ marginTop: '6px' }}>{doc.description || 'Institutional document resource.'}</p>
+                  </div>
+
+                  <div className="doc-card-actions">
+                    <span className="badge badge-gray">{doc.file_type || 'PDF'}</span>
+                    <button className="btn-primary" style={{ padding: '6px 12px', fontSize: '0.75rem' }}>
+                      <Eye size={14} /> Preview
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
     </div>
   );
 }
