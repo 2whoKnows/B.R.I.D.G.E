@@ -1,3 +1,43 @@
-export default function Logo({ size = 40 }) {
-  return <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bridge-logo-grad" x1="0" y1="0" x2="40" y2="40"><stop offset="0%" stopColor="#6D8CF0" /><stop offset="100%" stopColor="#8B6FE0" /></linearGradient></defs><line x1="12" y1="12" x2="22" y2="16" stroke="url(#bridge-logo-grad)" strokeWidth="2" /><line x1="22" y1="16" x2="30" y2="10" stroke="url(#bridge-logo-grad)" strokeWidth="2" /><line x1="22" y1="16" x2="18" y2="27" stroke="url(#bridge-logo-grad)" strokeWidth="2" /><circle cx="12" cy="12" r="3.5" fill="url(#bridge-logo-grad)" /><circle cx="30" cy="10" r="3" fill="url(#bridge-logo-grad)" /><circle cx="22" cy="16" r="4" fill="url(#bridge-logo-grad)" /><circle cx="18" cy="27" r="3" fill="url(#bridge-logo-grad)" /></svg>;
+import logoImg from '../../assets/logo.png';
+
+export default function Logo({ size = 36, showText = true, variant = 'light' }) {
+  const isLight = variant === 'light'; // light text for dark backgrounds, dark text for light backgrounds
+  return (
+    <div className="bridge-logo-container" style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+      <img
+        src={logoImg}
+        alt="B.R.I.D.G.E. Logo"
+        style={{ width: `${size}px`, height: `${size}px`, objectFit: 'contain' }}
+      />
+      {showText && (
+        <div className="bridge-logo-text-wrap" style={{ display: 'flex', flexDirection: 'column' }}>
+          <span
+            className="bridge-logo-title"
+            style={{
+              fontWeight: 800,
+              fontSize: size >= 40 ? '1.25rem' : '1.1rem',
+              letterSpacing: '0.08em',
+              color: isLight ? '#FFFFFF' : '#0F172A',
+              fontFamily: 'inherit',
+              lineHeight: 1,
+            }}
+          >
+            B.R.I.D.G.E.
+          </span>
+          <span
+            style={{
+              fontSize: '0.65rem',
+              fontWeight: 600,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: isLight ? '#94A3B8' : '#64748B',
+              marginTop: '2px',
+            }}
+          >
+            Academic SaaS
+          </span>
+        </div>
+      )}
+    </div>
+  );
 }
