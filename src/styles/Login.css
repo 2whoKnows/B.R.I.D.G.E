@@ -8,6 +8,7 @@
   background: #0F172A; /* Deep Navy */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .login-card {
@@ -81,7 +82,7 @@
 .login-input {
   width: 100%;
   box-sizing: border-box;
-  padding: 11px 14px;
+  padding: 12px 14px;
   border-radius: 10px;
   border: 1px solid #E2E8F0;
   background: #F8FAFC;
@@ -89,6 +90,7 @@
   color: #0F172A;
   outline: none;
   transition: all 0.2s ease;
+  min-height: 44px;
 }
 
 .login-input::placeholder {
@@ -113,13 +115,16 @@
   transform: translateY(-50%);
   background: none;
   border: none;
-  padding: 4px;
+  padding: 6px;
   display: flex;
   align-items: center;
   color: #64748B;
   cursor: pointer;
   border-radius: 6px;
   transition: color 0.15s ease;
+  min-width: 36px;
+  min-height: 36px;
+  justify-content: center;
 }
 
 .login-eye-btn:hover {
@@ -132,6 +137,8 @@
   justify-content: space-between;
   font-size: 0.8125rem;
   margin-top: -4px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .login-remember {
@@ -145,15 +152,15 @@
 
 .login-remember input {
   accent-color: #2563EB;
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   border-radius: 4px;
 }
 
 .login-forgot-link {
   background: none;
   border: none;
-  padding: 0;
+  padding: 4px 0;
   color: #2563EB;
   font-weight: 600;
   cursor: pointer;
@@ -177,6 +184,7 @@
   letter-spacing: 0.05em;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-height: 44px;
 }
 
 .login-submit-btn:hover:not(:disabled) {
@@ -228,6 +236,7 @@
   gap: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-height: 44px;
 }
 
 .login-google-btn:hover:not(:disabled) {
@@ -253,7 +262,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 16px;
   z-index: 1000;
 }
 
@@ -262,12 +271,15 @@
   max-width: 360px;
   background: #FFFFFF;
   border-radius: 18px;
-  padding: 28px;
+  padding: 24px 20px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+  box-sizing: border-box;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .login-modal-icon {
@@ -300,12 +312,49 @@
 .login-modal-btn {
   margin-top: 20px;
   width: 100%;
-  padding: 10px;
-  border-radius: 8px;
+  padding: 11px;
+  border-radius: 10px;
   border: none;
   background: #0F172A;
   color: #FFFFFF;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
+  min-height: 44px;
+}
+
+/* Mobile & Short Viewport Overrides */
+@media (max-width: 480px) {
+  .login-page {
+    padding: 16px 12px;
+  }
+
+  .login-card {
+    padding: 28px 20px 24px;
+    border-radius: 16px;
+  }
+
+  .login-logo-header {
+    margin-bottom: 18px;
+  }
+
+  .login-brand-title {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-height: 650px) {
+  .login-page {
+    align-items: flex-start;
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+
+  .login-logo-header {
+    margin-bottom: 14px;
+  }
+
+  .login-footer {
+    margin-top: 16px;
+  }
 }
