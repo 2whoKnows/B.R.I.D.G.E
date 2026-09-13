@@ -34,8 +34,10 @@ export default function Login() {
   const redirectByRole = (role) => {
     if (role === 'system_admin') {
       navigate('/admin/dashboard')
-    } else if (role === 'document_manager' || role === 'teacher') {
+    } else if (role === 'document_manager') {
       navigate('/manager/dashboard')
+    } else if (role === 'teacher') {
+      navigate('/teacher')
     } else {
       navigate('/')
     }

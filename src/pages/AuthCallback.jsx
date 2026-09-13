@@ -197,11 +197,12 @@ export default function AuthCallback() {
         navigate('/admin/dashboard', {
           replace: true,
         })
-      } else if (
-        profile.role === 'document_manager' ||
-        profile.role === 'teacher'
-      ) {
+      } else if (profile.role === 'document_manager') {
         navigate('/manager/dashboard', {
+          replace: true,
+        })
+      } else if (profile.role === 'teacher') {
+        navigate('/teacher', {
           replace: true,
         })
       } else {
