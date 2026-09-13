@@ -59,12 +59,25 @@ export default function AuthCallback() {
         user.user_metadata?.picture ||
         null
 
+      // role and is_active MUST be included here.
+      // If the DB trigger didn't fire (or doesn't exist), this is the only
+      // place the profile row gets created for Google OAuth users.
+      // Without role='teacher', getTotalTeachers() returns 0 and the role-
+      // based redirect below falls through to the catch-all branch.
+      // Without is_active=true, the account-inactive guard kicks in and
+      // immediately signs the user out.
+      // We use onConflict:'id' so an existing row (e.g. created by the DB
+      // trigger with a null role) gets patched — but only the fields listed
+      // here are touched, so a manager row won't have its role overwritten
+      // because managers always have a profile row before this fallback runs.
       const { error: upsertError } = await supabase.from('profiles').upsert(
         {
           id: user.id,
           email: user.email,
           full_name: fullName,
           avatar_url: avatarUrl,
+          role: 'teacher',
+          is_active: true,
         },
         { onConflict: 'id' }
       )
