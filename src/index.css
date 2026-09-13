@@ -1,28 +1,45 @@
 :root {
-  --bg-navy: #0F172A;
-  --bg-navy-light: #1E293B;
-  --bg-navy-hover: #334155;
+  /* Surface & Base Colors — Muted Slate/Zinc Palette */
   --bg-app: #F8FAFC;
   --bg-card: #FFFFFF;
   --bg-subtle: #F1F5F9;
+  --bg-muted: #E2E8F0;
+  --bg-hover: #F8FAFC;
+  --bg-navy: #0F172A;
 
-  --primary: #2563EB;
-  --primary-hover: #1D4ED8;
-  --primary-light: #EFF6FF;
+  /* Primary & Interactive */
+  --primary: #0F172A;
+  --primary-hover: #1E293B;
+  --primary-light: #F1F5F9;
+  --primary-accent: #2563EB;
+  --primary-accent-hover: #1D4ED8;
+  --primary-accent-light: #EFF6FF;
 
+  /* Text Hierarchy */
   --text-main: #0F172A;
+  --text-secondary: #334155;
   --text-muted: #64748B;
-  --text-light: #94A3B8;
+  --text-subtle: #94A3B8;
+  --text-light: #E2E8F0;
+
+  /* Borders & Dividers */
   --border-color: #E2E8F0;
+  --border-subtle: #F1F5F9;
 
-  --radius-card: 18px;
-  --radius-btn: 10px;
-  --radius-badge: 9999px;
+  /* Standardized Radii (8px grid aligned) */
+  --radius-sm: 6px;
+  --radius-btn: 8px;
+  --radius-card: 12px;
+  --radius-badge: 6px;
+  --radius-full: 9999px;
 
-  --shadow-card: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
-  --shadow-hover: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
+  /* Standardized Shadows — Subtle & Clean */
+  --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.02);
+  --shadow-hover: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.03);
+  --shadow-dropdown: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
 
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* Typography */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Helvetica, Arial, sans-serif;
   color-scheme: light;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -40,6 +57,8 @@ html, body, #root {
   min-height: 100vh;
   background-color: var(--bg-app);
   color: var(--text-main);
+  font-size: 16px;
+  line-height: 1.5;
 }
 
 a {
@@ -55,18 +74,21 @@ input, select, textarea {
   font-family: inherit;
 }
 
-/* Scrollbar styling */
+/* Standardized Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #CBD5E1;
-  border-radius: 4px;
+  border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #94A3B8;
 }

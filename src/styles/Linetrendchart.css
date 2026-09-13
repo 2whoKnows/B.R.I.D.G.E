@@ -5,16 +5,18 @@
 }
 
 .ltc-axis-label {
-  font-size: 10.5px;
-  fill: #90a3b4;
+  font-size: 11px;
+  fill: #94A3B8;
   font-family: inherit;
+  font-weight: 500;
 }
 
 .ltc-empty {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 220px;
-  color: #90a3b4;
-  font-size: 0.85rem;
+  height: 200px;
+  color: #94A3B8;
+  font-size: 0.8125rem;
+  font-weight: 500;
 }
