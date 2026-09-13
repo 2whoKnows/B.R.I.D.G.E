@@ -8,7 +8,6 @@ import {
   Upload, 
   UserPlus, 
   FileCheck,
-  Eye,
   ArrowRight
 } from 'lucide-react';
 import { getDashboardData } from '../lib/Dashboardqueris';
@@ -54,15 +53,22 @@ export default function Dashboard({ managerName = 'Manager' }) {
     day: 'numeric'
   });
 
+  const maxVal = Math.max(
+    ...((data.monthlyAnalytics || []).map(m => Number(m.value) || 0)),
+    10
+  );
+
   return (
     <div className="page-container">
       {/* Welcome Header */}
       <div className="welcome-banner">
-        <div>
+        <div className="welcome-info">
           <h2 className="welcome-title">Welcome back, {managerName}</h2>
-          <p className="welcome-subtitle">B.R.I.D.G.E. Academic Document Management Overview — {currentDateStr}</p>
+          <p className="welcome-subtitle">
+            Academic document management overview &bull; {currentDateStr}
+          </p>
         </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div className="welcome-actions">
           <button className="btn-primary" onClick={() => setShowUploadModal(true)}>
             <Upload size={16} />
             Upload Document
@@ -73,40 +79,40 @@ export default function Dashboard({ managerName = 'Manager' }) {
       {/* KPI Cards */}
       <div className="kpi-grid">
         <div className="kpi-card">
-          <div className="kpi-icon-wrap" style={{ backgroundColor: '#EFF6FF', color: '#2563EB' }}>
-            <FileText size={24} />
+          <div className="kpi-icon-wrap">
+            <FileText size={20} />
           </div>
-          <div>
+          <div className="kpi-content">
             <div className="kpi-val">{loading ? '—' : data.totalDocuments}</div>
             <div className="kpi-lbl">Total Documents</div>
           </div>
         </div>
 
         <div className="kpi-card">
-          <div className="kpi-icon-wrap" style={{ backgroundColor: '#F0FDF4', color: '#16A34A' }}>
-            <Users size={24} />
+          <div className="kpi-icon-wrap">
+            <Users size={20} />
           </div>
-          <div>
+          <div className="kpi-content">
             <div className="kpi-val">{loading ? '—' : data.totalTeachers}</div>
             <div className="kpi-lbl">Total Teachers</div>
           </div>
         </div>
 
         <div className="kpi-card">
-          <div className="kpi-icon-wrap" style={{ backgroundColor: '#FAF5FF', color: '#9333EA' }}>
-            <Download size={24} />
+          <div className="kpi-icon-wrap">
+            <Download size={20} />
           </div>
-          <div>
+          <div className="kpi-content">
             <div className="kpi-val">{loading ? '—' : data.totalDownloads}</div>
             <div className="kpi-lbl">Total Downloads</div>
           </div>
         </div>
 
         <div className="kpi-card">
-          <div className="kpi-icon-wrap" style={{ backgroundColor: '#FFF7ED', color: '#EA580C' }}>
-            <TrendingUp size={24} />
+          <div className="kpi-icon-wrap">
+            <TrendingUp size={20} />
           </div>
-          <div>
+          <div className="kpi-content">
             <div className="kpi-val">{loading ? '—' : data.downloadsThisMonth}</div>
             <div className="kpi-lbl">Downloads This Month</div>
           </div>
@@ -118,7 +124,7 @@ export default function Dashboard({ managerName = 'Manager' }) {
         <div className="card-header">
           <span className="card-title">Quick Actions</span>
         </div>
-        <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+        <div className="quick-actions-bar">
           <button className="btn-primary" onClick={() => setShowUploadModal(true)}>
             <Upload size={16} />
             Upload Document
@@ -134,39 +140,43 @@ export default function Dashboard({ managerName = 'Manager' }) {
         </div>
       </div>
 
-      {/* Main Dual Grid: Charts & Activity */}
+      {/* Main Dual Grid: Charts & Most Downloaded */}
       <div className="dashboard-dual-grid">
         {/* Download Analytics */}
         <div className="bridge-card">
           <div className="card-header">
-            <span className="card-title">Download Analytics (Current Year)</span>
-            <span className="badge badge-blue">Monthly Volume</span>
+            <div>
+              <h3 className="card-title">Download Analytics</h3>
+              <p className="card-subtitle">Monthly volume across all faculties</p>
+            </div>
+            <span className="badge badge-gray">Current Year</span>
           </div>
 
-          <div style={{ padding: '16px 0', minHeight: '180px', display: 'flex', alignItems: 'flex-end', gap: '12px' }}>
-            {data.monthlyAnalytics.length === 0 ? (
-              <div style={{ color: '#94A3B8', fontSize: '0.875rem' }}>No download data recorded yet for this period.</div>
+          <div className="chart-container">
+            {(!data.monthlyAnalytics || data.monthlyAnalytics.length === 0) ? (
+              <div className="table-cell-subtle" style={{ padding: '32px 0', textAlign: 'center' }}>
+                No download data recorded yet for this period.
+              </div>
             ) : (
-              data.monthlyAnalytics.map((item, idx) => {
-                const maxVal = Math.max(...data.monthlyAnalytics.map(m => m.value), 10);
-                const heightPct = Math.max(12, Math.round((item.value / maxVal) * 100));
-                return (
-                  <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569' }}>{item.value}</span>
-                    <div 
-                      style={{ 
-                        width: '100%', 
-                        maxWidth: '28px', 
-                        height: `${heightPct}px`, 
-                        backgroundColor: '#2563EB', 
-                        borderRadius: '6px 6px 2px 2px',
-                        transition: 'height 0.3s ease'
-                      }} 
-                    />
-                    <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 500 }}>{item.label}</span>
-                  </div>
-                );
-              })
+              <div className="chart-bars-wrap">
+                {data.monthlyAnalytics.map((item, idx) => {
+                  const val = Number(item.value) || 0;
+                  const heightPct = Math.max(8, Math.round((val / maxVal) * 100));
+                  return (
+                    <div key={idx} className="chart-col">
+                      <span className="chart-val-label">{val}</span>
+                      <div className="chart-bar-track">
+                        <div 
+                          className="chart-bar-fill" 
+                          style={{ height: `${heightPct}%` }}
+                          title={`${item.label}: ${val} downloads`}
+                        />
+                      </div>
+                      <span className="chart-axis-label">{item.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
         </div>
@@ -174,41 +184,35 @@ export default function Dashboard({ managerName = 'Manager' }) {
         {/* Most Downloaded Documents */}
         <div className="bridge-card">
           <div className="card-header">
-            <span className="card-title">Most Downloaded</span>
+            <div>
+              <h3 className="card-title">Most Downloaded</h3>
+              <p className="card-subtitle">Top performing assets</p>
+            </div>
             <button 
-              className="btn-secondary" 
-              style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+              className="btn-ghost" 
               onClick={() => navigate('/manager/documents')}
             >
               View All <ArrowRight size={12} />
             </button>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {data.mostDownloaded.length === 0 ? (
-              <div style={{ color: '#94A3B8', fontSize: '0.875rem', padding: '12px 0' }}>No documents available.</div>
+          <div className="doc-list">
+            {(!data.mostDownloaded || data.mostDownloaded.length === 0) ? (
+              <div className="table-cell-subtle" style={{ padding: '24px 0', textAlign: 'center' }}>
+                No documents available.
+              </div>
             ) : (
-              data.mostDownloaded.map((doc) => (
-                <div 
-                  key={doc.id}
-                  style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between',
-                    padding: '10px 12px',
-                    borderRadius: '10px',
-                    backgroundColor: '#F8FAFC',
-                    border: '1px solid #E2E8F0'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                    <FileText size={18} color="#2563EB" />
-                    <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              data.mostDownloaded.map((doc, idx) => (
+                <div key={doc.id || idx} className="doc-item-row">
+                  <div className="doc-item-left">
+                    <span className="doc-item-rank">#{idx + 1}</span>
+                    <FileText size={16} className="doc-item-icon" />
+                    <span className="doc-item-title" title={doc.title}>
                       {doc.title}
                     </span>
                   </div>
-                  <span className="badge badge-blue">
-                    <Download size={12} /> {doc.download_count}
+                  <span className="badge badge-gray">
+                    <Download size={11} /> {doc.download_count || 0}
                   </span>
                 </div>
               ))
@@ -220,10 +224,12 @@ export default function Dashboard({ managerName = 'Manager' }) {
       {/* Recent Activity */}
       <div className="bridge-card">
         <div className="card-header">
-          <span className="card-title">Recent Activity</span>
+          <div>
+            <h3 className="card-title">Recent Activity</h3>
+            <p className="card-subtitle">Latest system and document events</p>
+          </div>
           <button 
-            className="btn-secondary" 
-            style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+            className="btn-ghost" 
             onClick={() => navigate('/manager/activity-log')}
           >
             Full Log <ArrowRight size={12} />
@@ -241,27 +247,41 @@ export default function Dashboard({ managerName = 'Manager' }) {
               </tr>
             </thead>
             <tbody>
-              {data.recentActivity.length === 0 ? (
+              {(!data.recentActivity || data.recentActivity.length === 0) ? (
                 <tr>
-                  <td colSpan="4" style={{ textAlign: 'center', color: '#94A3B8', padding: '24px' }}>
+                  <td colSpan="4" style={{ textAlign: 'center', padding: '24px' }} className="table-cell-subtle">
                     No recent activity logged.
                   </td>
                 </tr>
               ) : (
-                data.recentActivity.map((act) => (
-                  <tr key={act.id}>
-                    <td data-label="User" style={{ fontWeight: 600 }}>{act.user}</td>
-                    <td data-label="Action">
-                      <span className={`badge ${act.action === 'download' ? 'badge-blue' : act.action === 'upload' ? 'badge-green' : 'badge-gray'}`}>
-                        {act.action}
-                      </span>
-                    </td>
-                    <td data-label="Document">{act.document}</td>
-                    <td data-label="Timestamp" style={{ color: '#94A3B8', fontSize: '0.8125rem' }}>
-                      {new Date(act.time).toLocaleString()}
-                    </td>
-                  </tr>
-                ))
+                data.recentActivity.map((act) => {
+                  const actionType = (act.action || '').toLowerCase();
+                  const badgeClass = actionType.includes('download')
+                    ? 'badge-blue'
+                    : actionType.includes('upload') || actionType.includes('create')
+                    ? 'badge-green'
+                    : 'badge-gray';
+
+                  return (
+                    <tr key={act.id}>
+                      <td data-label="User" className="table-cell-title">{act.user}</td>
+                      <td data-label="Action">
+                        <span className={`badge ${badgeClass}`}>
+                          {act.action}
+                        </span>
+                      </td>
+                      <td data-label="Document" className="table-cell-title">{act.document}</td>
+                      <td data-label="Timestamp" className="table-cell-subtle">
+                        {act.time ? new Date(act.time).toLocaleString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : '—'}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
