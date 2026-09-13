@@ -3,31 +3,11 @@ import { supabase } from "./supabase";
 /**
  * List all user profiles.
  *
- * WHY THE RPC PATH:
- * The `profiles` table has RLS enabled. The default anon-key policy only allows
- * each user to read their own row (auth.uid() = id). Document managers need to
- * read all rows, but we cannot use the service-role key on the client.
+ * REQUIRED: one-time SQL in the Supabase SQL Editor so the manager can read
+ * all profiles rows (RLS on `profiles` would otherwise restrict each user to
+ * reading only their own row via auth.uid() = id).
  *
- * Solution: call a SECURITY DEFINER Postgres function `get_all_profiles()` that
- * runs with elevated privileges and is only callable by authenticated users.
- *
- * Required SQL (run once in Supabase SQL Editor):
- * ─────────────────────────────────────────────────────────────────────────────
- * CREATE OR REPLACE FUNCTION get_all_profiles()
- * RETURNS SETOF profiles
- * LANGUAGE sql
- * SECURITY DEFINER
- * SET search_path = public
- * AS $$
- *   SELECT * FROM profiles ORDER BY created_at DESC;
- * $$;
- *
- * -- Allow any authenticated user to call it (route-level auth still protects
- * -- the manager UI, so only managers ever reach this code path).
- * GRANT EXECUTE ON FUNCTION get_all_profiles() TO authenticated;
- * ─────────────────────────────────────────────────────────────────────────────
- *
- * Alternatively, add a permissive RLS SELECT policy for managers:
+ * Run this once:
  * ─────────────────────────────────────────────────────────────────────────────
  * CREATE POLICY "managers_can_read_all_profiles"
  * ON profiles FOR SELECT
@@ -37,17 +17,17 @@ import { supabase } from "./supabase";
  *   IN ('document_manager', 'system_admin')
  * );
  * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * Also ensure the self-read policy exists so teachers can still read their own
+ * profile (AuthContext calls loadProfile on every session):
+ * ─────────────────────────────────────────────────────────────────────────────
+ * CREATE POLICY "users_can_read_own_profile"
+ * ON profiles FOR SELECT
+ * TO authenticated
+ * USING (auth.uid() = id);
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 export async function listUsers() {
-  // Try the SECURITY DEFINER RPC first (bypasses RLS).
-  const { data: rpcData, error: rpcError } = await supabase.rpc("get_all_profiles");
-
-  if (!rpcError && rpcData) {
-    return rpcData;
-  }
-
-  // Fallback: direct table query — works if the permissive RLS policy is in
-  // place instead of the RPC function.
   const { data, error } = await supabase
     .from("profiles")
     .select("id, email, full_name, role, is_active, department, created_at")
