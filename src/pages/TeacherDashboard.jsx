@@ -5,20 +5,17 @@ import {
   FileText, 
   Star, 
   Eye, 
-  Download, 
-  Clock, 
-  Folder, 
   ArrowRight,
   Sparkles
 } from 'lucide-react';
-import { listDocuments, getCategories, recordView, downloadDocument } from '../lib/documentQueries';
+import { listDocuments, getCategories } from '../lib/documentQueries';
 import { useAuth } from '../context/AuthContext';
 import { fileTypeLabel } from '../lib/fileTypeLabel';
 import '../styles/Pages.css';
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
-  const { profile, role } = useAuth();
+  const { profile } = useAuth();
   const [documents, setDocuments] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -71,49 +68,41 @@ export default function TeacherDashboard() {
   };
 
   const favoritedDocs = documents.filter(d => favorites.includes(d.id));
-  const recentlyAdded = [...documents].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 4);
+  const recentlyAdded = [...documents]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 4);
 
   return (
     <div className="page-container">
-      {/* Welcome Banner & Search Hero */}
-      <div className="welcome-banner" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '20px' }}>
-        <div>
+      {/* Teacher Search & Welcome Card */}
+      <div className="teacher-hero-card">
+        <div className="welcome-info">
           <h2 className="welcome-title">Welcome back, {profile?.full_name || 'Faculty Member'}</h2>
-          <p className="welcome-subtitle">Search and access verified institutional syllabi, exam templates, and academic guidelines.</p>
+          <p className="welcome-subtitle">
+            Search and access institutional syllabi, exam templates, and academic guidelines.
+          </p>
         </div>
 
-        {/* Large Prominent Document Search Bar */}
-        <form onSubmit={handleSearchSubmit} className="search-hero-wrap teacher-search-hero" style={{ position: 'relative', width: '100%' }}>
-          <Search className="teacher-search-icon" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} size={22} />
+        {/* Clean, Focused Search Bar */}
+        <form onSubmit={handleSearchSubmit} className="teacher-search-bar">
+          <Search className="teacher-search-icon-pos" size={18} />
           <input
             type="text"
-            className="search-input"
-            style={{
-              padding: '16px 20px 16px 52px',
-              fontSize: '1rem',
-              borderRadius: '14px',
-              backgroundColor: '#FFFFFF',
-              border: 'none',
-              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)'
-            }}
-            placeholder="Search all institutional documents, course codes, or titles..."
+            className="teacher-search-input"
+            placeholder="Search documents by course code, title, or keyword..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <button 
-            type="submit" 
-            className="btn-primary teacher-search-submit"
-            style={{ position: 'absolute', right: '8px', top: '8px', bottom: '8px', padding: '0 20px', borderRadius: '10px' }}
-          >
+          <button type="submit" className="btn-primary teacher-search-btn-pos btn-sm">
             Search
           </button>
         </form>
 
-        {/* Interactive Category Pills */}
-        <div className="teacher-category-row" style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
+        {/* Interactive Category Filter Pills */}
+        <div className="category-pills-wrap">
           <button 
-            className={`badge ${!selectedCategory ? 'badge-blue' : 'badge-gray'}`}
-            style={{ padding: '8px 16px', fontSize: '0.8125rem', cursor: 'pointer' }}
+            type="button"
+            className={`category-pill ${!selectedCategory ? 'active' : ''}`}
             onClick={() => setSelectedCategory(null)}
           >
             All Categories
@@ -121,8 +110,8 @@ export default function TeacherDashboard() {
           {categories.map(cat => (
             <button
               key={cat.id}
-              className={`badge ${selectedCategory === cat.id ? 'badge-blue' : 'badge-gray'}`}
-              style={{ padding: '8px 16px', fontSize: '0.8125rem', cursor: 'pointer' }}
+              type="button"
+              className={`category-pill ${selectedCategory === cat.id ? 'active' : ''}`}
               onClick={() => setSelectedCategory(cat.id)}
             >
               {cat.name}
@@ -131,39 +120,50 @@ export default function TeacherDashboard() {
         </div>
       </div>
 
-      {/* Quick Access & Favorite Documents */}
+      {/* Favorite Documents Quick Access */}
       {favoritedDocs.length > 0 && (
         <div className="bridge-card">
           <div className="card-header">
-            <span className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Star size={18} color="#EAB308" fill="#EAB308" /> Favorite Documents Quick Access
-            </span>
-            <button className="btn-secondary" style={{ fontSize: '0.75rem' }} onClick={() => navigate('/teacher/favorites')}>
-              View All Favorites ({favoritedDocs.length})
+            <div>
+              <h3 className="card-title">Favorite Documents</h3>
+              <p className="card-subtitle">Quick access to pinned resources</p>
+            </div>
+            <button className="btn-ghost" onClick={() => navigate('/teacher/favorites')}>
+              View All ({favoritedDocs.length}) <ArrowRight size={12} />
             </button>
           </div>
 
           <div className="doc-grid">
             {favoritedDocs.slice(0, 3).map(doc => (
-              <div key={doc.id} className="doc-card" onClick={() => navigate(`/teacher/documents/${doc.id}`)} style={{ cursor: 'pointer' }}>
+              <div 
+                key={doc.id} 
+                className="doc-card" 
+                onClick={() => navigate(`/teacher/documents/${doc.id}`)}
+              >
                 <div>
                   <div className="doc-card-header">
-                    <span className="badge badge-blue">{doc.categories?.name || 'Academic'}</span>
+                    <span className="badge badge-gray">{doc.categories?.name || 'Academic'}</span>
                     <button 
+                      className="star-btn starred"
+                      title="Remove from favorites"
                       onClick={(e) => toggleFavorite(doc.id, e)} 
-                      style={{ background: 'none', border: 'none', cursor: 'pointer' }}
                     >
-                      <Star size={18} color="#EAB308" fill="#EAB308" />
+                      <Star size={16} fill="currentColor" />
                     </button>
                   </div>
-                  <h3 className="doc-title" style={{ marginTop: '10px' }}>{doc.title}</h3>
-                  <p className="doc-desc" style={{ marginTop: '6px' }}>{doc.description || 'Verified document.'}</p>
+                  <h4 className="doc-title">{doc.title}</h4>
+                  <p className="doc-desc">{doc.description || 'Verified academic resource.'}</p>
                 </div>
 
                 <div className="doc-card-actions">
-                  <span style={{ fontSize: '0.75rem', color: '#64748B' }}>v{doc.version || 1} • {fileTypeLabel(doc.file_type)}</span>
-                  <button className="btn-primary" style={{ padding: '6px 12px', fontSize: '0.75rem' }}>
-                    <Eye size={14} /> Preview
+                  <span className="table-cell-subtle">
+                    v{doc.version || 1} &bull; {fileTypeLabel(doc.file_type)}
+                  </span>
+                  <button className="btn-secondary btn-sm" onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/teacher/documents/${doc.id}`);
+                  }}>
+                    <Eye size={13} /> Preview
                   </button>
                 </div>
               </div>
@@ -175,54 +175,62 @@ export default function TeacherDashboard() {
       {/* Recently Added Documents */}
       <div className="bridge-card">
         <div className="card-header">
-          <span className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Sparkles size={18} color="#2563EB" /> Recently Added Documents
-          </span>
-          <button className="btn-secondary" style={{ fontSize: '0.75rem' }} onClick={() => navigate('/teacher/documents')}>
-            Browse Library <ArrowRight size={14} />
+          <div>
+            <h3 className="card-title">Recently Added Documents</h3>
+            <p className="card-subtitle">Newly published curriculum resources and templates</p>
+          </div>
+          <button className="btn-ghost" onClick={() => navigate('/teacher/documents')}>
+            Browse Library <ArrowRight size={12} />
           </button>
         </div>
 
-        <div className="doc-grid">
-          {loading ? (
-            <div style={{ color: '#94A3B8', fontSize: '0.875rem' }}>Loading documents...</div>
-          ) : recentlyAdded.length === 0 ? (
-            <div style={{ color: '#94A3B8', fontSize: '0.875rem' }}>No recent documents available.</div>
-          ) : (
-            recentlyAdded.map(doc => {
+        {loading ? (
+          <div className="table-cell-subtle" style={{ padding: '32px 0', textAlign: 'center' }}>
+            Loading documents...
+          </div>
+        ) : recentlyAdded.length === 0 ? (
+          <div className="table-cell-subtle" style={{ padding: '32px 0', textAlign: 'center' }}>
+            No recent documents available.
+          </div>
+        ) : (
+          <div className="doc-grid">
+            {recentlyAdded.map(doc => {
               const isFav = favorites.includes(doc.id);
               return (
                 <div 
                   key={doc.id} 
                   className="doc-card"
                   onClick={() => navigate(`/teacher/documents/${doc.id}`)}
-                  style={{ cursor: 'pointer' }}
                 >
                   <div>
                     <div className="doc-card-header">
-                      <span className="badge badge-blue">{doc.categories?.name || 'General'}</span>
+                      <span className="badge badge-gray">{doc.categories?.name || 'General'}</span>
                       <button 
+                        className={`star-btn ${isFav ? 'starred' : ''}`}
+                        title={isFav ? 'Remove from favorites' : 'Add to favorites'}
                         onClick={(e) => toggleFavorite(doc.id, e)} 
-                        style={{ background: 'none', border: 'none', cursor: 'pointer' }}
                       >
-                        <Star size={18} color={isFav ? '#EAB308' : '#CBD5E1'} fill={isFav ? '#EAB308' : 'none'} />
+                        <Star size={16} fill={isFav ? 'currentColor' : 'none'} />
                       </button>
                     </div>
-                    <h3 className="doc-title" style={{ marginTop: '10px' }}>{doc.title}</h3>
-                    <p className="doc-desc" style={{ marginTop: '6px' }}>{doc.description || 'Institutional document resource.'}</p>
+                    <h4 className="doc-title">{doc.title}</h4>
+                    <p className="doc-desc">{doc.description || 'Institutional document resource.'}</p>
                   </div>
 
                   <div className="doc-card-actions">
                     <span className="badge badge-gray">{fileTypeLabel(doc.file_type)}</span>
-                    <button className="btn-primary" style={{ padding: '6px 12px', fontSize: '0.75rem' }}>
-                      <Eye size={14} /> Preview
+                    <button className="btn-secondary btn-sm" onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/teacher/documents/${doc.id}`);
+                    }}>
+                      <Eye size={13} /> Preview
                     </button>
                   </div>
                 </div>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
