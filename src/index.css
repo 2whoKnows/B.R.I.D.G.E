@@ -1,38 +1,94 @@
 :root {
-  font: 18px/145% system-ui, 'Segoe UI', Roboto, sans-serif;
-  letter-spacing: 0.18px;
+  /* Surface & Base Colors — Muted Slate/Zinc Palette */
+  --bg-app: #F8FAFC;
+  --bg-card: #FFFFFF;
+  --bg-subtle: #F1F5F9;
+  --bg-muted: #E2E8F0;
+  --bg-hover: #F8FAFC;
+  --bg-navy: #0F172A;
+
+  /* Primary & Interactive */
+  --primary: #0F172A;
+  --primary-hover: #1E293B;
+  --primary-light: #F1F5F9;
+  --primary-accent: #2563EB;
+  --primary-accent-hover: #1D4ED8;
+  --primary-accent-light: #EFF6FF;
+
+  /* Text Hierarchy */
+  --text-main: #0F172A;
+  --text-secondary: #334155;
+  --text-muted: #64748B;
+  --text-subtle: #94A3B8;
+  --text-light: #E2E8F0;
+
+  /* Borders & Dividers */
+  --border-color: #E2E8F0;
+  --border-subtle: #F1F5F9;
+
+  /* Standardized Radii (8px grid aligned) */
+  --radius-sm: 6px;
+  --radius-btn: 8px;
+  --radius-card: 12px;
+  --radius-badge: 6px;
+  --radius-full: 9999px;
+
+  /* Standardized Shadows — Subtle & Clean */
+  --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.02);
+  --shadow-hover: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.03);
+  --shadow-dropdown: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
+
+  /* Typography */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Helvetica, Arial, sans-serif;
   color-scheme: light;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-html, body, #root {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-body {
-  max-width: 100vw;
 }
 
 * {
   box-sizing: border-box;
-}
-
-img, svg, canvas, video {
-  max-width: 100%;
-  display: block;
-}
-
-h1, h2 {
   margin: 0;
+  padding: 0;
 }
 
-p {
-  margin: 0;
+html, body, #root {
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+}
+
+input, select, textarea {
+  font-family: inherit;
+}
+
+/* Standardized Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
 }

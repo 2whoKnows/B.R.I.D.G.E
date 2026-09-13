@@ -1,16 +1,75 @@
-# React + Vite
+# B.R.I.D.G.E. — Academic Document Management SaaS Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+B.R.I.D.G.E. is a modern, trustworthy academic document-management SaaS platform designed for university administrators, document managers, and faculty members (teachers).
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🌟 Key Features
 
-## React Compiler
+### 🏢 Document Manager Portal
+- **Dashboard Overview**: Real-time KPI metrics for total documents, active teachers, total downloads, and monthly analytics volume.
+- **Document Management**: Search, category/file-type filtering, versioning history, and document archive/deletion.
+- **Teacher Directory**: User list, department filters, account activation/deactivation, and teacher invitation modal.
+- **System Analytics**: Interactive download and view trends charts with date-range filters (`7d`, `30d`, `90d`, `1y`).
+- **Audit Activity Log**: Comprehensive system event logging tracking logins, uploads, version updates, downloads, and user status changes.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 🎓 Teacher Portal
+- **Faculty Dashboard**: Welcome area, prominent document search, interactive category chips, and favorite quick access grid.
+- **Document Library**: Filterable academic library sorted by newest, most viewed, or most downloaded resources.
+- **Distraction-Free Preview**: Document preview frame with version metadata, signed URL opening, and quick download.
+- **Favorites & Recently Viewed**: Pinned document management and recent reading history.
 
-## Expanding the ESLint configuration
+### 📱 Responsive Mobile & Tablet Design
+- Adaptive touch-friendly layout supporting smartphones (`320px` to `480px`), tablets (`768px` to `1024px`), and desktop monitors (`>1024px`).
+- Bottom mobile navigation bar, slide-out drawer menu, and mobile-friendly table cards.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## 🛠️ Technology Stack
+
+- **Frontend**: React 19, React Router v7, Vite 8
+- **Icons**: Lucide React
+- **Backend & Storage**: Supabase (Authentication, PostgreSQL Database, Storage Buckets)
+- **Styling**: Modern CSS Design System (Custom CSS Variables, Flexbox, CSS Grid)
+
+---
+
+## 🚀 Getting Started
+
+### 1. Prerequisites
+- [Node.js](https://nodejs.org/) (v18 or higher recommended)
+- npm or yarn
+
+### 2. Installation
+Clone the repository and install dependencies:
+```bash
+npm install
+```
+
+### 3. Environment Setup
+Create a `.env` file in the root directory (or copy from `.env.example`):
+```bash
+cp .env.example .env
+```
+
+Set your Supabase credentials in `.env`:
+```env
+VITE_SUPABASE_URL=https://your-supabase-project-id.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-anon-key
+```
+
+### 4. Running Development Server
+```bash
+npm run dev
+```
+
+### 5. Production Build
+```bash
+npm run build
+npm run preview
+```
+
+---
+
+## 🔒 License & Academic Security
+This project is configured for authorized institutional and academic personnel access.

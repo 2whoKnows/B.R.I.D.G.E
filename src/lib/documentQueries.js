@@ -2,6 +2,119 @@ import { supabase } from "./supabase";
 
 const BUCKET = "documents";
 
+function withCurrentVersion(document) {
+  const versions = [...(document.document_versions ?? [])].sort(
+    (a, b) => b.version_number - a.version_number
+  );
+  const currentVersion = versions[0] ?? null;
+
+  return {
+    ...document,
+    file_name: currentVersion?.file_name ?? null,
+    file_path: currentVersion?.file_path ?? null,
+    file_size: currentVersion?.file_size ?? null,
+    file_type: currentVersion?.mime_type ?? currentVersion?.file_type ?? null,
+    version: currentVersion?.version_number ?? document.current_version ?? null,
+    version_id: currentVersion?.id ?? null,
+  };
+}
+
+export async function listDocuments({
+  search = "",
+  categoryId = null,
+  page = 1,
+  pageSize = 20,
+} = {}) {
+  let query = supabase
+    .from("documents")
+    .select(`
+      id, title, description, status, current_version, category_id, created_at, updated_at,
+      categories ( name ),
+      document_versions ( id, version_number, file_name, file_path, file_size, file_type, mime_type )
+    `, { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range((page - 1) * pageSize, page * pageSize - 1);
+
+  if (categoryId) query = query.eq("category_id", categoryId);
+  if (search) query = query.ilike("title", `%${search}%`);
+
+  const { data, error, count } = await query;
+  if (error) throw error;
+
+  return {
+    documents: (data ?? []).map(withCurrentVersion),
+    total: count ?? 0,
+  };
+}
+
+export async function getDocument(documentId) {
+  const { data, error } = await supabase
+    .from("documents")
+    .select(`
+      id, title, description, status, current_version, category_id, created_at, updated_at,
+      categories ( name ),
+      document_versions ( id, version_number, file_name, file_path, file_size, file_type, mime_type )
+    `)
+    .eq("id", documentId)
+    .single();
+
+  if (error) throw error;
+  return withCurrentVersion(data);
+}
+
+export async function getSignedDownloadUrl(filePath, expiresInSeconds = 60) {
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(filePath, expiresInSeconds);
+
+  if (error) throw error;
+  return data.signedUrl;
+}
+
+export async function getSignedPreviewUrl(filePath, expiresInSeconds = 3600) {
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(filePath, expiresInSeconds);
+
+  if (error) throw error;
+  // Add download parameter to force inline preview
+  return `${data.signedUrl}&download=0`;
+}
+
+export async function recordDownload({ documentId, userId, versionId = null }) {
+  await supabase.rpc("increment_document_downloads", { doc_id: documentId });
+
+  if (!userId) return;
+
+  let currentVersionId = versionId;
+  if (!currentVersionId) {
+    const { data, error } = await supabase
+      .from("document_versions")
+      .select("id, version_number")
+      .eq("document_id", documentId)
+      .order("version_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+    currentVersionId = data?.id ?? null;
+  }
+
+  const { error: logError } = await supabase.from("download_logs").insert({
+    document_id: documentId,
+    version_id: currentVersionId,
+    user_id: userId,
+  });
+  if (logError) throw logError;
+
+  const { error: activityError } = await supabase.from("activity_logs").insert({
+    user_id: userId,
+    action: "download",
+    document_id: documentId,
+  });
+  if (activityError) throw activityError;
+}
+
 export async function listDocumentsWithStats() {
   const { data, error } = await supabase
     .from("documents")
@@ -30,6 +143,26 @@ export async function getCategories() {
   return data ?? [];
 }
 
+export async function createCategory(name) {
+  const { data, error } = await supabase
+    .from("categories")
+    .insert({ name, is_active: true })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteCategory(categoryId) {
+  const { error } = await supabase
+    .from("categories")
+    .update({ is_active: false })
+    .eq("id", categoryId);
+
+  if (error) throw error;
+}
+
 export async function getCurrentUserRole() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
@@ -45,6 +178,8 @@ export async function getCurrentUserRole() {
 }
 
 export async function uploadNewDocument({ title, description, categoryId, file, userId }) {
+  console.log('Upload data:', { title, description, categoryId, file, userId });
+  
   const { data: doc, error: docError } = await supabase
     .from("documents")
     .insert({
@@ -57,7 +192,10 @@ export async function uploadNewDocument({ title, description, categoryId, file, 
     .select()
     .single();
 
-  if (docError) throw docError;
+  if (docError) {
+    console.error('Document insert error:', docError);
+    throw docError;
+  }
 
   const filePath = `${doc.id}/v1/${file.name}`;
 

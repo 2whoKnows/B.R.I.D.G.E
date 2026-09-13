@@ -1,14 +1,12 @@
 import "../styles/Linetrendchart.css";
 
-// Small dependency-free line chart so the project doesn't need to pull in
-// a charting library just for this. Swap for recharts/etc. if preferred.
 export default function LineTrendChart({ data, height = 220 }) {
   if (!data || data.length === 0) {
-    return <div className="ltc-empty">No data yet</div>;
+    return <div className="ltc-empty">No trend data available</div>;
   }
 
   const width = 700;
-  const padding = { top: 16, right: 12, bottom: 28, left: 34 };
+  const padding = { top: 20, right: 16, bottom: 28, left: 36 };
   const maxVal = Math.max(...data.map((d) => d.value), 1);
   const niceMax = Math.ceil(maxVal / 5) * 5 || 5;
 
@@ -35,11 +33,12 @@ export default function LineTrendChart({ data, height = 220 }) {
     <svg className="ltc-svg" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
       <defs>
         <linearGradient id="ltcFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#3fa9f5" stopOpacity="0.28" />
-          <stop offset="100%" stopColor="#3fa9f5" stopOpacity="0" />
+          <stop offset="0%" stopColor="#0F172A" stopOpacity="0.05" />
+          <stop offset="100%" stopColor="#0F172A" stopOpacity="0" />
         </linearGradient>
       </defs>
 
+      {/* Grid Lines & Y-Axis Labels */}
       {Array.from({ length: gridLines + 1 }).map((_, i) => {
         const y = padding.top + (innerH / gridLines) * i;
         const val = Math.round(niceMax - (niceMax / gridLines) * i);
@@ -50,22 +49,38 @@ export default function LineTrendChart({ data, height = 220 }) {
               x2={width - padding.right}
               y1={y}
               y2={y}
-              stroke="#e7edf3"
+              stroke="#F1F5F9"
               strokeWidth="1"
             />
-            <text x={padding.left - 8} y={y + 4} textAnchor="end" className="ltc-axis-label">
+            <text x={padding.left - 8} y={y + 3.5} textAnchor="end" className="ltc-axis-label">
               {val}
             </text>
           </g>
         );
       })}
 
+      {/* Trend Area & Stroke */}
       <path d={areaPath} fill="url(#ltcFill)" />
-      <path d={linePath} fill="none" stroke="#0a3d62" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path 
+        d={linePath} 
+        fill="none" 
+        stroke="#0F172A" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+      />
 
+      {/* Data Points & X-Axis Labels */}
       {points.map((p, i) => (
         <g key={i}>
-          <circle cx={p.x} cy={p.y} r="3.2" fill="#0a3d62" />
+          <circle 
+            cx={p.x} 
+            cy={p.y} 
+            r="3.5" 
+            fill="#0F172A" 
+            stroke="#FFFFFF" 
+            strokeWidth="2" 
+          />
           <text x={p.x} y={height - 6} textAnchor="middle" className="ltc-axis-label">
             {p.label}
           </text>

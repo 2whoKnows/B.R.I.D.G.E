@@ -19,8 +19,10 @@ export default function CreatePassword() {
   const redirectByRole = (role) => {
     if (role === 'system_admin') {
       navigate('/admin/dashboard', { replace: true })
-    } else if (role === 'document_manager' || role === 'teacher') {
+    } else if (role === 'document_manager') {
       navigate('/manager/dashboard', { replace: true })
+    } else if (role === 'teacher') {
+      navigate('/teacher', { replace: true })
     } else {
       navigate('/', { replace: true })
     }
