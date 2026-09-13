@@ -1,15 +1,19 @@
-import { supabase } from './supabase'
+import { supabase } from './supabase';
 
-export async function logActivity(action, details = {}) {
-  const { data: { user } } = await supabase.auth.getUser()
+export async function logActivity(action, metadata = {}) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
 
-  const { error } = await supabase.from('activity_logs').insert({
-    user_id: user?.id ?? null,
-    action,
-    details,
-  })
+    const { error } = await supabase.from('activity_logs').insert({
+      user_id: user?.id ?? null,
+      action,
+      metadata: metadata || {},
+    });
 
-  if (error) {
-    console.error('logActivity failed:', error)
+    if (error) {
+      console.warn('logActivity notice:', error.message);
+    }
+  } catch (err) {
+    console.warn('logActivity exception:', err);
   }
 }
