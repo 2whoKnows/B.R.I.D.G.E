@@ -22,7 +22,10 @@ export default function AddTeacherModal({ onClose, onSuccess }) {
 
     setLoading(true);
     try {
-      // In Supabase, creating or inviting a user
+      // Create the auth user. raw_user_meta_data is passed here so the
+      // on-signup trigger (if present) can pick up the role. We also upsert
+      // the profiles row explicitly below to guarantee role='teacher' even
+      // when the trigger doesn't propagate metadata.
       const { data, error: inviteError } = await supabase.auth.signUp({
         email: email.trim(),
         password: 'TempPassword123!',
@@ -37,7 +40,27 @@ export default function AddTeacherModal({ onClose, onSuccess }) {
 
       if (inviteError) throw inviteError;
 
-      setSuccessMsg(`Teacher invitation created for ${email.trim()}.`);
+      // Explicitly upsert the profile so the role column is always correct
+      // regardless of whether the DB trigger reads raw_user_meta_data.
+      if (data?.user?.id) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: data.user.id,
+            email: email.trim(),
+            full_name: fullName.trim(),
+            department: department,
+            role: 'teacher',
+            is_active: true,
+          }, { onConflict: 'id' });
+
+        if (profileError) {
+          console.error('Profile upsert error:', profileError);
+          // Non-fatal: the auth user was created; profile may still be set by trigger.
+        }
+      }
+
+      setSuccessMsg(`Teacher account created for ${email.trim()}.`);
       setTimeout(() => {
         onSuccess?.();
       }, 1500);
