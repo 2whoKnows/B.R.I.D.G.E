@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Search, Download, FileText, BookOpen, ClipboardList, LayoutTemplate } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { getCategories as listCategories, listDocuments } from "../lib/documentQueries";
+import "../styles/TeacherPortal.css";
 
 const CATEGORY_ICONS = {
   Rubrics: FileText,
@@ -33,7 +34,7 @@ export default function TeacherDashboard() {
   }, []);
 
   return (
-    <div className="space-y-8">
+    <div className="teacher-page space-y-8">
       <div>
         <h1 className="text-xl font-semibold text-ink-900">
           Good morning, {profile?.full_name ?? "[Teacher Name]"}!

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Search, Download, FileText } from "lucide-react";
 import { listDocuments } from "../lib/documentQueries";
+import "../styles/TeacherPortal.css";
 
 const PAGE_SIZE = 10;
 
@@ -22,7 +23,7 @@ export default function TeacherDocuments() {
   const totalPages = Math.max(1, Math.ceil(result.total / PAGE_SIZE));
 
   return (
-    <div className="space-y-5">
+    <div className="teacher-page space-y-5">
       <h1 className="text-xl font-semibold text-ink-900">Documents</h1>
       <div className="relative max-w-md">
         <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-400" />
