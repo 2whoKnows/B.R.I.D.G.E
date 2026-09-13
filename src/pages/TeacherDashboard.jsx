@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { listDocuments, getCategories, recordView, downloadDocument } from '../lib/documentQueries';
 import { useAuth } from '../context/AuthContext';
+import { fileTypeLabel } from '../lib/fileTypeLabel';
 import '../styles/Pages.css';
 
 export default function TeacherDashboard() {
@@ -82,8 +83,8 @@ export default function TeacherDashboard() {
         </div>
 
         {/* Large Prominent Document Search Bar */}
-        <form onSubmit={handleSearchSubmit} className="search-hero-wrap" style={{ position: 'relative', width: '100%' }}>
-          <Search style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} size={22} />
+        <form onSubmit={handleSearchSubmit} className="search-hero-wrap teacher-search-hero" style={{ position: 'relative', width: '100%' }}>
+          <Search className="teacher-search-icon" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} size={22} />
           <input
             type="text"
             className="search-input"
@@ -101,7 +102,7 @@ export default function TeacherDashboard() {
           />
           <button 
             type="submit" 
-            className="btn-primary" 
+            className="btn-primary teacher-search-submit"
             style={{ position: 'absolute', right: '8px', top: '8px', bottom: '8px', padding: '0 20px', borderRadius: '10px' }}
           >
             Search
@@ -109,7 +110,7 @@ export default function TeacherDashboard() {
         </form>
 
         {/* Interactive Category Pills */}
-        <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
+        <div className="teacher-category-row" style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
           <button 
             className={`badge ${!selectedCategory ? 'badge-blue' : 'badge-gray'}`}
             style={{ padding: '8px 16px', fontSize: '0.8125rem', cursor: 'pointer' }}
@@ -160,7 +161,7 @@ export default function TeacherDashboard() {
                 </div>
 
                 <div className="doc-card-actions">
-                  <span style={{ fontSize: '0.75rem', color: '#64748B' }}>v{doc.version || 1} • {doc.file_type || 'PDF'}</span>
+                  <span style={{ fontSize: '0.75rem', color: '#64748B' }}>v{doc.version || 1} • {fileTypeLabel(doc.file_type)}</span>
                   <button className="btn-primary" style={{ padding: '6px 12px', fontSize: '0.75rem' }}>
                     <Eye size={14} /> Preview
                   </button>
@@ -212,7 +213,7 @@ export default function TeacherDashboard() {
                   </div>
 
                   <div className="doc-card-actions">
-                    <span className="badge badge-gray">{doc.file_type || 'PDF'}</span>
+                    <span className="badge badge-gray">{fileTypeLabel(doc.file_type)}</span>
                     <button className="btn-primary" style={{ padding: '6px 12px', fontSize: '0.75rem' }}>
                       <Eye size={14} /> Preview
                     </button>

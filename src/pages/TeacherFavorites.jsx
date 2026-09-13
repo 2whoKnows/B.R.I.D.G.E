@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Star, Eye, Download, FileText } from 'lucide-react';
 import { listDocumentsWithStats, downloadDocument } from '../lib/documentQueries';
 import { useAuth } from '../context/AuthContext';
+import { fileTypeLabel } from '../lib/fileTypeLabel';
 import '../styles/Pages.css';
 
 export default function TeacherFavorites() {
@@ -94,7 +95,7 @@ export default function TeacherFavorites() {
                 </div>
 
                 <div className="doc-card-actions">
-                  <span className="badge badge-gray">{currentVer?.file_type || 'PDF'}</span>
+                  <span className="badge badge-gray">{fileTypeLabel(currentVer?.file_type)}</span>
                   <button className="btn-primary" style={{ padding: '6px 12px', fontSize: '0.75rem' }}>
                     <Eye size={14} /> Preview
                   </button>

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { getDocument, getSignedDownloadUrl, recordView, downloadDocument } from '../lib/documentQueries';
 import { useAuth } from '../context/AuthContext';
+import { fileTypeLabel } from '../lib/fileTypeLabel';
 import '../styles/Pages.css';
 
 export default function TeacherDocumentPreview() {
@@ -122,7 +123,7 @@ export default function TeacherDocumentPreview() {
           <ArrowLeft size={16} /> Back
         </button>
 
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className="preview-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <button 
             className="btn-secondary" 
             onClick={toggleFavorite}
@@ -151,12 +152,12 @@ export default function TeacherDocumentPreview() {
 
       {/* Document Metadata Header */}
       <div className="bridge-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+        <div className="preview-metadata" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
               <span className="badge badge-blue">{document.categories?.name || 'Academic'}</span>
               <span className="badge badge-green">v{document.version || 1}</span>
-              <span className="badge badge-gray" style={{ textTransform: 'uppercase' }}>{document.file_type || 'PDF'}</span>
+              <span className="badge badge-gray" style={{ textTransform: 'uppercase' }}>{fileTypeLabel(document.file_type)}</span>
             </div>
             <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0F172A', lineHeight: 1.2 }}>{document.title}</h1>
             {document.description && (
@@ -164,7 +165,7 @@ export default function TeacherDocumentPreview() {
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: '16px', fontSize: '0.8125rem', color: '#64748B', background: '#F8FAFC', padding: '12px 16px', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+          <div className="preview-stats" style={{ display: 'flex', gap: '16px', fontSize: '0.8125rem', color: '#64748B', background: '#F8FAFC', padding: '12px 16px', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
             <div>
               <div style={{ fontWeight: 600, color: '#0F172A' }}>File Size</div>
               <div>{formatFileSize(document.file_size)}</div>
@@ -178,11 +179,12 @@ export default function TeacherDocumentPreview() {
       </div>
 
       {/* Large Document / PDF Viewer Frame */}
-      <div className="bridge-card" style={{ padding: '0', overflow: 'hidden', minHeight: '650px', display: 'flex', flexDirection: 'column' }}>
+      <div className="bridge-card preview-frame" style={{ padding: '0', overflow: 'hidden', minHeight: '650px', display: 'flex', flexDirection: 'column' }}>
         {signedUrl ? (
           <iframe
             src={signedUrl}
             title={document.title}
+            className="preview-iframe"
             style={{ width: '100%', height: '700px', border: 'none', backgroundColor: '#525659' }}
           />
         ) : (

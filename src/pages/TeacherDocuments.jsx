@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, Filter, Star, Eye, Download, FileText, ArrowUpDown } from 'lucide-react';
 import { listDocumentsWithStats, getCategories, downloadDocument } from '../lib/documentQueries';
 import { useAuth } from '../context/AuthContext';
+import { fileTypeLabel } from '../lib/fileTypeLabel';
 import '../styles/Pages.css';
 
 export default function TeacherDocuments() {
@@ -192,7 +193,7 @@ export default function TeacherDocuments() {
                 <div>
                   <div className="doc-meta" style={{ marginBottom: '12px' }}>
                     <span className="badge badge-gray" style={{ textTransform: 'uppercase' }}>
-                      {currentVer?.file_type || 'PDF'}
+                      {fileTypeLabel(currentVer?.file_type)}
                     </span>
                     <span>{formatFileSize(currentVer?.file_size)}</span>
                     <span>• {new Date(doc.updated_at || doc.created_at).toLocaleDateString()}</span>

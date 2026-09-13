@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { History, Eye, FileText, ArrowRight } from 'lucide-react';
 import { listDocumentsWithStats } from '../lib/documentQueries';
+import { fileTypeLabel } from '../lib/fileTypeLabel';
 import '../styles/Pages.css';
 
 export default function TeacherRecentlyViewed() {
@@ -68,7 +69,7 @@ export default function TeacherRecentlyViewed() {
                 </div>
 
                 <div className="doc-card-actions">
-                  <span className="badge badge-gray">{currentVer?.file_type || 'PDF'}</span>
+                  <span className="badge badge-gray">{fileTypeLabel(currentVer?.file_type)}</span>
                   <button className="btn-primary" style={{ padding: '6px 12px', fontSize: '0.75rem' }}>
                     <Eye size={14} /> Open Preview
                   </button>
