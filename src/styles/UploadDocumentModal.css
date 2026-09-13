@@ -1,7 +1,15 @@
+/* ────────────────────────────────────────────────────────────
+   UploadDocumentModal — modal-specific styles only.
+   Form field styling (inputs, labels, errors) is handled by
+   Login.css (.login-input, .login-label, .form-group, .login-error)
+   and Pages.css (.btn-primary, .btn-secondary, .kpi-icon-wrap).
+   ──────────────────────────────────────────────────────────── */
+
 .udm-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(2, 20, 35, 0.55);
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -12,149 +20,217 @@
 
 .udm-card {
   width: 100%;
-  max-width: 420px;
+  max-width: 460px;
   background: #ffffff;
-  border-radius: 14px;
-  padding: 22px 22px 20px;
-  box-shadow: 0 20px 40px rgba(2, 20, 35, 0.3);
+  border-radius: var(--radius-card, 12px);
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
   box-sizing: border-box;
   max-height: 90vh;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+
+.udm-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.udm-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .udm-title {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
-  font-size: 17px;
+  font-size: 0.9375rem;
   font-weight: 700;
-  color: #052a3f;
+  color: var(--text-main, #0F172A);
   margin: 0;
+  line-height: 1.3;
 }
 
 .udm-subtitle {
-  margin: 4px 0 0;
-  font-size: 12.5px;
-  color: #6b8494;
+  margin: 3px 0 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted, #64748B);
 }
 
-.udm-error {
-  margin-top: 12px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: #fdecec;
-  color: #c62828;
-  font-size: 12px;
+.udm-close-btn {
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-muted, #64748B);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s ease, background 0.15s ease;
+  flex-shrink: 0;
 }
+
+.udm-close-btn:hover {
+  color: var(--text-main, #0F172A);
+  background: var(--bg-subtle, #F1F5F9);
+}
+
+/* ── Form layout ─────────────────────────────────────────── */
 
 .udm-form {
   display: flex;
   flex-direction: column;
-  margin-top: 14px;
+  gap: 16px;
 }
 
-.udm-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #052a3f;
-  margin-bottom: 4px;
-}
-.udm-label:not(:first-child) {
-  margin-top: 12px;
-}
-
-.udm-input,
-.udm-textarea {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 9px 12px;
-  border-radius: 8px;
-  border: 1px solid #dbe7ee;
-  background: #f5fbff;
-  font-size: 13px;
-  color: #052a3f;
-  outline: none;
-  font-family: inherit;
-  transition: border-color 0.15s ease;
-}
+/* Textarea variant of login-input */
 .udm-textarea {
   resize: vertical;
-}
-.udm-input:focus,
-.udm-textarea:focus {
-  border-color: #0096c7;
+  min-height: 80px;
+  height: auto;
 }
 
-.udm-file-input {
-  font-size: 12.5px;
-  color: #45606f;
+/* ── Styled file input ───────────────────────────────────── */
+
+/* Hide the native input visually but keep it accessible */
+.udm-file-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
-.udm-file-name {
-  margin-top: 6px;
-  font-size: 12px;
-  color: #0077b6;
+/* Styled label acts as the visible control — matches login-input look */
+.udm-file-label {
+  display: block;
+  width: 100%;
+  cursor: pointer;
+}
+
+.udm-file-label-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color, #E2E8F0);
+  background: var(--bg-app, #F8FAFC);
+  font-size: 0.875rem;
+  color: var(--text-main, #0F172A);
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  min-height: 44px;
+}
+
+.udm-file-label:hover .udm-file-label-inner,
+.udm-file-label:focus-within .udm-file-label-inner {
+  border-color: #2563EB;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.udm-file-icon {
+  color: var(--text-muted, #64748B);
+  flex-shrink: 0;
+}
+
+.udm-file-label-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted, #64748B);
+  font-size: 0.875rem;
+}
+
+/* When a file is selected, the name is shown in main text colour */
+.udm-file-label-text.has-file {
+  color: var(--text-main, #0F172A);
+}
+
+.udm-file-browse-btn {
+  flex-shrink: 0;
+  padding: 4px 12px;
+  border-radius: var(--radius-btn, 8px);
+  background: var(--bg-muted, #E2E8F0);
+  color: var(--text-secondary, #334155);
+  font-size: 0.8125rem;
   font-weight: 600;
+  transition: background 0.15s ease;
 }
+
+.udm-file-label:hover .udm-file-browse-btn {
+  background: var(--bg-navy, #0F172A);
+  color: #ffffff;
+}
+
+.udm-file-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted, #64748B);
+  margin-top: 4px;
+}
+
+/* ── Actions row ─────────────────────────────────────────── */
 
 .udm-actions {
   display: flex;
   gap: 10px;
-  margin-top: 18px;
+  padding-top: 4px;
 }
 
-.udm-btn {
-  flex: 1;
-  padding: 10px;
-  border-radius: 9px;
-  border: none;
-  background: #0a3d62;
-  color: #ffffff;
-  font-size: 12.5px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  cursor: pointer;
-  transition: background 0.15s ease, opacity 0.15s ease;
-}
-.udm-btn:hover:not(:disabled) {
-  background: #073653;
-}
-.udm-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-.udm-btn-secondary {
-  background: #f0f4f8;
-  color: #4c6072;
-}
-.udm-btn-secondary:hover:not(:disabled) {
-  background: #e2e9f0;
-}
+/* ── Success state ───────────────────────────────────────── */
 
 .udm-success {
-  margin-top: 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 8px;
+  gap: 12px;
+  padding: 8px 0 4px;
 }
+
 .udm-success-icon {
-  width: 44px;
-  height: 44px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
-  background: #e3f3fb;
-  color: #0077b6;
-  font-size: 22px;
-  font-weight: 700;
+  background: var(--primary-accent-light, #EFF6FF);
+  color: var(--primary-accent, #2563EB);
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.udm-success p {
+
+.udm-success-text {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-main, #0F172A);
   margin: 0;
-  font-size: 13px;
-  color: #4c6072;
 }
-.udm-success .udm-btn {
-  margin-top: 8px;
-  width: 100%;
+
+/* ── Mobile ──────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+  .udm-card {
+    padding: 20px 16px;
+    border-radius: 16px;
+  }
+
+  .udm-actions {
+    flex-direction: column-reverse;
+  }
+
+  .udm-actions .btn-primary,
+  .udm-actions .btn-secondary {
+    flex: none !important;
+    width: 100%;
+  }
 }

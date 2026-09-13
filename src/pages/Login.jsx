@@ -64,16 +64,46 @@ export default function Login() {
       }
 
       const userId = data.user.id
-      const { data: profile, error: profileError } = await supabase
+      let { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role, is_active')
         .eq('id', userId)
         .single()
 
       if (profileError || !profile) {
-        setError('Unable to load account profile. Contact system administration.')
-        await supabase.auth.signOut()
-        return
+        // No profile row yet — this happens when a teacher signs up directly
+        // (no invite flow) and the DB trigger either doesn't exist or hasn't
+        // fired yet. Create the row here so they can proceed immediately.
+        // Managers always have a profile set up by us developers directly in
+        // Supabase, so we'll never reach this branch for a manager account.
+        const fullName =
+          data.user.user_metadata?.full_name ||
+          data.user.user_metadata?.name ||
+          data.user.email.split('@')[0]
+
+        const { data: newProfile, error: upsertError } = await supabase
+          .from('profiles')
+          .upsert(
+            {
+              id: userId,
+              email: data.user.email,
+              full_name: fullName,
+              role: 'teacher',
+              is_active: true,
+            },
+            { onConflict: 'id' }
+          )
+          .select('role, is_active')
+          .single()
+
+        if (upsertError || !newProfile) {
+          console.error('Profile creation failed on login:', upsertError)
+          setError('Unable to load account profile. Contact system administration.')
+          await supabase.auth.signOut()
+          return
+        }
+
+        profile = newProfile
       }
 
       if (profile.is_active === false) {
