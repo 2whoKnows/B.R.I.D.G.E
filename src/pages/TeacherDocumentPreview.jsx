@@ -21,7 +21,7 @@ export default function DocumentPreview() {
     setDownloading(true);
     try {
       const url = await getSignedDownloadUrl(doc.file_path);
-      await recordDownload({ documentId: doc.id, userId: profile?.id });
+      await recordDownload({ documentId: doc.id, userId: profile?.id, versionId: doc.version_id });
       window.open(url, "_blank");
     } finally { setDownloading(false); }
   }
