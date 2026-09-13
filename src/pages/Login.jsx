@@ -2,11 +2,10 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { logActivity } from '../lib/Logactivity'
-import logo from '../assets/logo.png'
+import Logo from '../components/ui/Logo'
 import '../styles/Login.css'
 
-const REMEMBERED_EMAIL_KEY = 'h2know_remembered_email'
+const REMEMBERED_EMAIL_KEY = 'bridge_remembered_email'
 
 function GoogleIcon() {
   return (
@@ -39,7 +38,7 @@ export default function Login() {
     } else if (role === 'teacher') {
       navigate('/teacher')
     } else {
-      navigate('/')
+      navigate('/teacher')
     }
   }
 
@@ -48,7 +47,7 @@ export default function Login() {
     setError('')
 
     if (!email.trim() || !password) {
-      setError('Enter your email and password.')
+      setError('Please enter your email and password.')
       return
     }
 
@@ -60,7 +59,7 @@ export default function Login() {
       })
 
       if (signInError) {
-        setError('Incorrect email or password.')
+        setError('Invalid credentials. Please check your email and password.')
         return
       }
 
@@ -72,13 +71,13 @@ export default function Login() {
         .single()
 
       if (profileError || !profile) {
-        setError('Unable to load your account. Try again.')
+        setError('Unable to load account profile. Contact system administration.')
         await supabase.auth.signOut()
         return
       }
 
       if (profile.is_active === false) {
-        setError('Your account is inactive. Contact an administrator.')
+        setError('Your account is currently inactive. Contact system administration.')
         await supabase.auth.signOut()
         return
       }
@@ -89,11 +88,10 @@ export default function Login() {
         localStorage.removeItem(REMEMBERED_EMAIL_KEY)
       }
 
-      await logActivity('login', { method: 'email' })
       redirectByRole(profile.role)
     } catch (err) {
       console.error('Login error:', err)
-      setError('Something went wrong. Try again.')
+      setError('An unexpected login error occurred. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -107,7 +105,7 @@ export default function Login() {
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
     if (oauthError) {
-      setError('Google sign-in failed. Try again.')
+      setError('Google authentication failed. Please try again.')
       setGoogleLoading(false)
     }
   }
@@ -117,7 +115,7 @@ export default function Login() {
     setError('')
 
     if (!email.trim()) {
-      setError('Enter your email above first, then click "Forgot Password?"')
+      setError('Please enter your email address above before requesting a password reset.')
       return
     }
 
@@ -129,14 +127,14 @@ export default function Login() {
       )
 
       if (resetError) {
-        setError('Could not send reset email. Try again.')
+        setError('Could not send password reset email. Please try again.')
         return
       }
 
       setShowResetModal(true)
     } catch (err) {
       console.error('Forgot password error:', err)
-      setError('Something went wrong. Try again.')
+      setError('An unexpected error occurred. Please try again.')
     } finally {
       setResetLoading(false)
     }
@@ -145,47 +143,50 @@ export default function Login() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <img src={logo} alt="H2KNOW" className="login-logo" />
-        <h1 className="login-title">
-          B.R.I.D.G.E
-        </h1>
-        <p className="login-tagline">Know the Flow, Before You Go</p>
-        <span className="login-badge">Authorized Personnel Only</span>
+        <div className="login-logo-header">
+          <Logo size={48} variant="dark" showText={false} />
+          <h1 className="login-brand-title">B.R.I.D.G.E.</h1>
+          <p className="login-tagline">Academic Document Management Platform</p>
+        </div>
 
-        {error && <div className="login-error">{error}</div>}
+        {error && <div className="login-error" role="alert">{error}</div>}
 
         <form className="login-form" onSubmit={handleSubmit} noValidate>
-          <label className="login-label" htmlFor="email">Email</label>
-          <input
-            id="email"
-            type="email"
-            className="login-input"
-            placeholder="Enter your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-          />
-
-          <label className="login-label" htmlFor="password">Password</label>
-          <div className="login-password-wrap">
+          <div className="form-group">
+            <label className="login-label" htmlFor="email">Email Address</label>
             <input
-              id="password"
-              type={showPassword ? 'text' : 'password'}
+              id="email"
+              type="email"
               className="login-input"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
+              placeholder="e.g. faculty@university.edu"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
             />
-            <button
-              type="button"
-              className="login-eye-btn"
-              onClick={() => setShowPassword((v) => !v)}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-              tabIndex={-1}
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
+          </div>
+
+          <div className="form-group">
+            <label className="login-label" htmlFor="password">Password</label>
+            <div className="login-password-wrap">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                className="login-input"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className="login-eye-btn"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           <div className="login-row">
@@ -195,7 +196,7 @@ export default function Login() {
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
               />
-              Remember me
+              <span>Remember me</span>
             </label>
             <button
               type="button"
@@ -208,12 +209,12 @@ export default function Login() {
           </div>
 
           <button type="submit" className="login-submit-btn" disabled={loading}>
-            {loading ? 'Logging in…' : 'LOGIN'}
+            {loading ? 'Authenticating…' : 'SIGN IN'}
           </button>
         </form>
 
         <div className="login-divider">
-          <span>or</span>
+          <span>or continue with</span>
         </div>
 
         <button
@@ -223,8 +224,12 @@ export default function Login() {
           disabled={googleLoading}
         >
           <GoogleIcon />
-          {googleLoading ? 'Redirecting…' : 'Sign in with Google'}
+          {googleLoading ? 'Connecting…' : 'Institutional Google Sign-In'}
         </button>
+
+        <div className="login-footer">
+          <p>Authorized Academic Personnel Access Only</p>
+        </div>
       </div>
 
       {showResetModal && (
@@ -233,14 +238,14 @@ export default function Login() {
             <div className="login-modal-icon">✓</div>
             <h2 className="login-modal-title">Reset Link Sent</h2>
             <p className="login-modal-text">
-              A password reset link has been sent to <strong>{email.trim()}</strong>. Check your inbox.
+              Instructions to reset your password have been sent to <strong>{email.trim()}</strong>.
             </p>
             <button
               type="button"
               className="login-modal-btn"
               onClick={() => setShowResetModal(false)}
             >
-              OK
+              Done
             </button>
           </div>
         </div>
