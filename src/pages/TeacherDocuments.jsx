@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, Filter, Star, Eye, Download, FileText, ArrowUpDown } from 'lucide-react';
-import { listDocumentsWithStats, getCategories, downloadDocument } from '../lib/documentQueries';
+import { listDocumentsWithStats, getCategories, getSignedDownloadUrl, recordDownload } from '../lib/documentQueries';
 import { useAuth } from '../context/AuthContext';
 import { fileTypeLabel } from '../lib/fileTypeLabel';
 import '../styles/Pages.css';
@@ -65,14 +65,20 @@ export default function TeacherDocuments() {
     const ver = doc.document_versions?.[0];
     if (!ver) return;
     try {
-      await downloadDocument(
-        doc.id,
-        ver.id,
-        ver.file_path,
-        profile?.id,
-        role,
-        ver.file_name
-      );
+      const downloadUrl = await getSignedDownloadUrl(ver.file_path, 60);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = ver.file_name || 'document';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Record the download
+      await recordDownload({ 
+        documentId: doc.id, 
+        userId: profile?.id, 
+        versionId: ver.id 
+      });
     } catch (err) {
       console.error('Download error:', err);
     }

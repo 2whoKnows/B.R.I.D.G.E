@@ -11,7 +11,7 @@ import {
   Layers,
   HardDrive
 } from 'lucide-react';
-import { getDocument, getSignedDownloadUrl, recordView, downloadDocument } from '../lib/documentQueries';
+import { getDocument, getSignedPreviewUrl, getSignedDownloadUrl, recordView, recordDownload } from '../lib/documentQueries';
 import { useAuth } from '../context/AuthContext';
 import { fileTypeLabel } from '../lib/fileTypeLabel';
 import '../styles/Pages.css';
@@ -42,7 +42,7 @@ export default function TeacherDocumentPreview() {
         setDocument(docData);
 
         if (docData?.file_path) {
-          const url = await getSignedDownloadUrl(docData.file_path, 3600);
+          const url = await getSignedPreviewUrl(docData.file_path, 3600);
           setSignedUrl(url);
         }
 
@@ -73,14 +73,20 @@ export default function TeacherDocumentPreview() {
   const handleDownload = async () => {
     if (!document || !document.file_path) return;
     try {
-      await downloadDocument(
-        document.id,
-        document.version_id,
-        document.file_path,
-        profile?.id,
-        role,
-        document.file_name
-      );
+      const downloadUrl = await getSignedDownloadUrl(document.file_path, 60);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = document.file_name || 'document';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Record the download
+      await recordDownload({ 
+        documentId: document.id, 
+        userId: profile?.id, 
+        versionId: document.version_id 
+      });
     } catch (err) {
       console.error('Download error:', err);
     }

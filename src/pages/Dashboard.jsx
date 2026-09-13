@@ -11,12 +11,15 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { getDashboardData } from '../lib/Dashboardqueris';
+import { getCategories, uploadNewDocument } from '../lib/documentQueries';
+import { useAuth } from '../context/AuthContext';
 import UploadDocumentModal from './UploadDocumentModal';
 import AddTeacherModal from './AddTeacherModal';
 import '../styles/Pages.css';
 
 export default function Dashboard({ managerName = 'Manager' }) {
   const navigate = useNavigate();
+  const { session } = useAuth();
   const [data, setData] = useState({
     totalDocuments: 0,
     totalTeachers: 0,
@@ -29,12 +32,17 @@ export default function Dashboard({ managerName = 'Manager' }) {
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [categories, setCategories] = useState([]);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const res = await getDashboardData();
+      const [res, cats] = await Promise.all([
+        getDashboardData(),
+        getCategories()
+      ]);
       setData(res);
+      setCategories(cats);
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
     } finally {
@@ -45,6 +53,20 @@ export default function Dashboard({ managerName = 'Manager' }) {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleUploadSubmit = async (uploadData) => {
+    try {
+      await uploadNewDocument({
+        ...uploadData,
+        userId: session?.user?.id
+      });
+      setShowUploadModal(false);
+      loadData();
+    } catch (err) {
+      console.error('Upload failed:', err);
+      throw err;
+    }
+  };
 
   const currentDateStr = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -291,11 +313,10 @@ export default function Dashboard({ managerName = 'Manager' }) {
       {/* Modals */}
       {showUploadModal && (
         <UploadDocumentModal
+          mode="create"
+          categories={categories}
           onClose={() => setShowUploadModal(false)}
-          onSuccess={() => {
-            setShowUploadModal(false);
-            loadData();
-          }}
+          onSubmit={handleUploadSubmit}
         />
       )}
 

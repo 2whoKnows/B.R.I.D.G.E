@@ -12,12 +12,14 @@ import {
   Calendar,
   Archive
 } from 'lucide-react';
-import { listDocumentsWithStats, getCategories, deleteDocument } from '../lib/documentQueries';
+import { listDocumentsWithStats, getCategories, deleteDocument, uploadNewDocument, uploadNewVersion } from '../lib/documentQueries';
+import { useAuth } from '../context/AuthContext';
 import UploadDocumentModal from './UploadDocumentModal';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
 import '../styles/Pages.css';
 
 export default function Documents() {
+  const { session } = useAuth();
   const [documents, setDocuments] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -60,6 +62,31 @@ export default function Documents() {
       fetchData();
     } catch (err) {
       console.error('Failed to delete document:', err);
+    }
+  };
+
+  const handleUploadSubmit = async (uploadData) => {
+    try {
+      if (uploadMode === 'create') {
+        await uploadNewDocument({
+          ...uploadData,
+          userId: session?.user?.id
+        });
+      } else if (uploadMode === 'version' && selectedDoc) {
+        const nextVersion = (selectedDoc.current_version || 0) + 1;
+        await uploadNewVersion({
+          documentId: selectedDoc.id,
+          nextVersion,
+          file: uploadData.file,
+          userId: session?.user?.id,
+          changeNotes: uploadData.changeNotes
+        });
+      }
+      setShowUploadModal(false);
+      fetchData();
+    } catch (err) {
+      console.error('Upload failed:', err);
+      throw err;
     }
   };
 
@@ -251,10 +278,7 @@ export default function Documents() {
           document={selectedDoc}
           categories={categories}
           onClose={() => setShowUploadModal(false)}
-          onSuccess={() => {
-            setShowUploadModal(false);
-            fetchData();
-          }}
+          onSubmit={handleUploadSubmit}
         />
       )}
 
