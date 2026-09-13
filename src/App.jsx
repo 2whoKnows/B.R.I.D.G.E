@@ -17,7 +17,8 @@ import TeacherDocumentPreview from './pages/TeacherDocumentPreview';
 import TeacherFavorites from './pages/TeacherFavorites';
 import TeacherRecentlyViewed from './pages/TeacherRecentlyViewed';
 
-import Settings from './pages/Settings';
+import ManagerSettings from './pages/ManagerSettings';
+import TeacherSettings from './pages/TeacherSettings';
 import Profile from './pages/Profile';
 
 import { AuthProvider } from './context/AuthContext';
@@ -56,7 +57,7 @@ function App() {
             <Route path="/manager/users" element={<Users />} />
             <Route path="/manager/analytics" element={<Analytics />} />
             <Route path="/manager/activity-log" element={<ActivityLog />} />
-            <Route path="/manager/settings" element={<Settings />} />
+            <Route path="/manager/settings" element={<ManagerSettings />} />
             <Route path="/manager/profile" element={<Profile />} />
           </Route>
 
@@ -74,7 +75,7 @@ function App() {
             <Route path="/teacher/documents/:documentId" element={<TeacherDocumentPreview />} />
             <Route path="/teacher/favorites" element={<TeacherFavorites />} />
             <Route path="/teacher/recently-viewed" element={<TeacherRecentlyViewed />} />
-            <Route path="/teacher/settings" element={<Settings />} />
+            <Route path="/teacher/settings" element={<TeacherSettings />} />
             <Route path="/teacher/profile" element={<Profile />} />
           </Route>
 
