@@ -1,359 +1,270 @@
-import { useEffect, useState, useCallback, useRef, Fragment } from "react";
-import DashboardLayout from "./Dashboardlayout";
-import UploadDocumentModal from "./UploadDocumentModal";
-import ConfirmDeleteModal from "./ConfirmDeleteModal";
-import { supabase } from "../lib/supabase";
-import {
-  listDocumentsWithStats,
-  getCategories,
-  uploadNewDocument,
-  recordView,
-  downloadDocument,
-  deleteDocument,
-  getCurrentUserRole,
-} from "../lib/documentQueries";
-import "../styles/Documents.css";
+import { useState, useEffect } from 'react';
+import { 
+  Search, 
+  Filter, 
+  Upload, 
+  FileText, 
+  Eye, 
+  Download, 
+  Trash2, 
+  Edit3, 
+  History, 
+  Calendar,
+  Archive
+} from 'lucide-react';
+import { listDocumentsWithStats, getCategories, deleteDocument } from '../lib/documentQueries';
+import UploadDocumentModal from './UploadDocumentModal';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
+import '../styles/Pages.css';
 
-function formatDate(isoString) {
-  if (!isoString) return "—";
-  return new Date(isoString).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function FileIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-      <path d="M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM14 3v4h4" />
-    </svg>
-  );
-}
-
-function DownloadIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 3v12m0 0-4-4m4 4 4-4M5 19.5h14" />
-    </svg>
-  );
-}
-
-function ViewIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M1.5 12s3.5-7 10.5-7 10.5 7 10.5 7-3.5 7-10.5 7-10.5-7-10.5-7z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
-
-function DeleteIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 7h16M9 7V4h6v3m-8 0 1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13" />
-      <path d="M10 11v6M14 11v6" />
-    </svg>
-  );
-}
-
-export default function Documents({ managerName = "Manager" }) {
+export default function Documents() {
   const [documents, setDocuments] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [currentUser, setCurrentUser] = useState(null);
-  const [currentRole, setCurrentRole] = useState(null);
-
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [fileTypeFilter, setFileTypeFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
+  
+  // Modals state
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [deleteTargetDoc, setDeleteTargetDoc] = useState(null);
-  const [actionError, setActionError] = useState("");
-  const [busyDocId, setBusyDocId] = useState(null);
-  const previewAnchorRef = useRef(null);
+  const [uploadMode, setUploadMode] = useState('create');
+  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const fetchData = async () => {
     try {
-      const [docs, cats] = await Promise.all([
+      setLoading(true);
+      const [docList, catList] = await Promise.all([
         listDocumentsWithStats(),
-        getCategories(),
+        getCategories()
       ]);
-      setDocuments(docs);
-      setCategories(cats);
+      setDocuments(docList);
+      setCategories(catList);
     } catch (err) {
-      console.error("Failed to load documents:", err);
-      setError(err.message ?? "Failed to load documents.");
+      console.error('Failed to fetch documents:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
-    let cancelled = false;
+    fetchData();
+  }, []);
 
-    async function loadUser() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!cancelled) setCurrentUser(user);
-
-      const role = await getCurrentUserRole();
-      if (!cancelled) setCurrentRole(role);
-    }
-
-    queueMicrotask(() => {
-      if (!cancelled) {
-        loadUser();
-        loadData();
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [loadData]);
-
-  const handleCreateDocument = async ({ title, description, categoryId, file }) => {
-    if (!currentUser) throw new Error("You must be signed in.");
-    await uploadNewDocument({
-      title,
-      description,
-      categoryId,
-      file,
-      userId: currentUser.id,
-    });
-    await loadData();
-  };
-
-  const handleDownload = async (doc) => {
-    setActionError("");
-    setBusyDocId(doc.id);
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
     try {
-      const latestVersion = [...(doc.document_versions ?? [])].sort(
-        (a, b) => b.version_number - a.version_number
-      )[0];
-
-      if (!latestVersion) {
-        setActionError("No file found for this document.");
-        return;
-      }
-
-      await downloadDocument(
-        doc.id,
-        latestVersion.id,
-        latestVersion.file_path,
-        currentUser?.id,
-        currentRole,
-        latestVersion.file_name
-      );
-
-      await loadData();
+      await deleteDocument(deleteTarget);
+      setDeleteTarget(null);
+      fetchData();
     } catch (err) {
-      console.error("Download failed:", err);
-      setActionError("Could not download this document. Try again.");
-    } finally {
-      setBusyDocId(null);
+      console.error('Failed to delete document:', err);
     }
   };
 
-  const handleView = async (doc) => {
-    setActionError("");
+  const filteredDocs = documents.filter(doc => {
+    const matchesSearch = search === '' || doc.title?.toLowerCase().includes(search.toLowerCase()) || doc.description?.toLowerCase().includes(search.toLowerCase());
+    const matchesCat = categoryFilter === '' || doc.category_id?.toString() === categoryFilter;
+    const latestVersion = doc.document_versions?.[0];
+    const fileType = latestVersion?.file_type?.toLowerCase() || '';
+    const matchesFileType = fileTypeFilter === '' || fileType.includes(fileTypeFilter.toLowerCase());
+    
+    return matchesSearch && matchesCat && matchesFileType;
+  });
 
-    try {
-      const latestVersion = [...(doc.document_versions ?? [])].sort(
-        (a, b) => b.version_number - a.version_number
-      )[0];
-
-      if (!latestVersion) {
-        setActionError("No file found for this document.");
-        return;
-      }
-
-      const { data, error } = await supabase.storage
-        .from("documents")
-        .createSignedUrl(latestVersion.file_path, 60);
-
-      if (error) throw error;
-
-      if (data?.signedUrl) {
-        const fileName = (latestVersion.file_name || "document").toLowerCase();
-        const mimeType = (latestVersion.mime_type || "").toLowerCase();
-
-        const previewableExtensions = [
-          "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv", "rtf"
-        ];
-        const isPreviewable = previewableExtensions.some((ext) => fileName.endsWith(ext)) ||
-          ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation", "text/plain", "text/csv"].includes(mimeType);
-
-        const previewUrl = isPreviewable
-          ? `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(data.signedUrl)}`
-          : data.signedUrl;
-
-        // Use a hidden real <a> element instead of window.open. Native
-        // anchor navigation isn't flagged as a popup by browsers/extensions
-        // the way window.open() is, so it survives the await far more
-        // reliably.
-        const anchor = previewAnchorRef.current;
-        if (anchor) {
-          anchor.href = previewUrl;
-          anchor.click();
-        } else {
-          setActionError("Could not open the preview. Please try again.");
-          return;
-        }
-      }
-
-      await recordView(doc.id, currentUser?.id, currentRole);
-      const isManager = currentRole === "document_manager" || currentRole === "system_admin";
-      if (!isManager) {
-        setDocuments((prev) =>
-          prev.map((d) =>
-            d.id === doc.id ? { ...d, total_views: (d.total_views ?? 0) + 1 } : d
-          )
-        );
-      }
-    } catch (err) {
-      console.error("Failed to open document:", err);
-      setActionError("Could not open this document. Try again.");
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!deleteTargetDoc) return;
-    await deleteDocument(deleteTargetDoc);
-    setDeleteTargetDoc(null);
-    await loadData();
+  const formatFileSize = (bytes) => {
+    if (!bytes) return '—';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
   return (
-    <DashboardLayout
-      activeKey="documents"
-      managerName={managerName}
-      pageTitle="Documents"
-    >
-      <p className="doc-page-subtitle">Manage uploaded documents, views, and downloads</p>
+    <div className="page-container">
+      {/* Top Header / Actions */}
+      <div className="filter-bar">
+        <div className="search-input-wrap">
+          <Search className="search-icon" size={18} />
+          <input
+            type="text"
+            className="search-input"
+            placeholder="Search documents by title, keyword, or metadata..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
 
-      {error && <div className="doc-error">{error}</div>}
-      {actionError && <div className="doc-error">{actionError}</div>}
+        <div className="filter-group">
+          <select 
+            className="filter-select"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
+            <option value="">All Categories</option>
+            {categories.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
 
-      <a
-        ref={previewAnchorRef}
-        href="about:blank"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ display: "none" }}
-        aria-hidden="true"
-        tabIndex={-1}
-      />
+          <select 
+            className="filter-select"
+            value={fileTypeFilter}
+            onChange={(e) => setFileTypeFilter(e.target.value)}
+          >
+            <option value="">All File Types</option>
+            <option value="pdf">PDF Document</option>
+            <option value="docx">Word (.docx)</option>
+            <option value="xlsx">Excel (.xlsx)</option>
+            <option value="pptx">PowerPoint (.pptx)</option>
+          </select>
 
-
-      <div className="doc-toolbar">
-        <span className="doc-count">
-          {loading ? "Loading…" : `${documents.length} document${documents.length === 1 ? "" : "s"}`}
-        </span>
-        <button
-          type="button"
-          className="doc-upload-btn"
-          onClick={() => setShowUploadModal(true)}
-        >
-          + Upload Document
-        </button>
+          <button 
+            className="btn-primary"
+            onClick={() => {
+              setUploadMode('create');
+              setSelectedDoc(null);
+              setShowUploadModal(true);
+            }}
+          >
+            <Upload size={16} />
+            Upload Document
+          </button>
+        </div>
       </div>
 
-      <div className="doc-panel">
-        <div className="doc-table-wrap">
-          <table className="doc-table">
+      {/* Document Table List */}
+      <div className="bridge-card" style={{ padding: '0', overflow: 'hidden' }}>
+        <div className="table-responsive">
+          <table className="bridge-table">
             <thead>
               <tr>
-                <th>Document</th>
+                <th>Title & Info</th>
                 <th>Category</th>
-                <th>Uploaded By</th>
-                <th>Views</th>
-                <th>Downloads</th>
-                <th>Updated</th>
-                <th></th>
+                <th>File Type</th>
+                <th>Size</th>
+                <th>Version</th>
+                <th>Upload Date</th>
+                <th>Stats</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {loading &&
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i}>
-                    <td colSpan={7}><span className="doc-skeleton" /></td>
-                  </tr>
-                ))}
-
-              {!loading && documents.length === 0 && (
+              {loading ? (
                 <tr>
-                  <td colSpan={7} className="doc-empty-cell">
-                    No documents uploaded yet.
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '32px', color: '#94A3B8' }}>
+                    Loading documents library...
                   </td>
                 </tr>
-              )}
-
-              {!loading &&
-                documents.map((doc) => (
-                  <Fragment key={doc.id}>
-                    <tr className="doc-row">
-                      <td className="doc-td-title">
-                        <span className="doc-row-icon"><FileIcon /></span>
-                        {doc.title}
+              ) : filteredDocs.length === 0 ? (
+                <tr>
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '32px', color: '#94A3B8' }}>
+                    No matching academic documents found.
+                  </td>
+                </tr>
+              ) : (
+                filteredDocs.map((doc) => {
+                  const currentVer = doc.document_versions?.[0];
+                  return (
+                    <tr key={doc.id}>
+                      <td data-label="Title" style={{ fontWeight: 600 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <FileText size={18} color="#2563EB" />
+                          <div>
+                            <div style={{ color: '#0F172A' }}>{doc.title}</div>
+                            {doc.description && (
+                              <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 400 }}>{doc.description}</div>
+                            )}
+                          </div>
+                        </div>
                       </td>
-                      <td>{doc.categories?.name ?? "—"}</td>
-                      <td>{doc.profiles?.full_name ?? "—"}</td>
-                      <td>{(doc.total_views ?? 0).toLocaleString()}</td>
-                      <td>{(doc.total_downloads ?? 0).toLocaleString()}</td>
-                      <td className="doc-td-time">{formatDate(doc.updated_at)}</td>
-                      <td className="doc-td-actions">
-                        <button
-                          type="button"
-                          className="doc-action-btn doc-action-view"
-                          onClick={() => handleView(doc)}
-                        >
-                          <ViewIcon />
-                          View
-                        </button>
-                        <button
-                          type="button"
-                          className="doc-action-btn doc-action-download"
-                          onClick={() => handleDownload(doc)}
-                          disabled={busyDocId === doc.id}
-                        >
-                          <DownloadIcon />
-                          {busyDocId === doc.id ? "…" : "Download"}
-                        </button>
-                        <button
-                          type="button"
-                          className="doc-action-btn doc-action-delete"
-                          onClick={() => setDeleteTargetDoc(doc)}
-                        >
-                          <DeleteIcon />
-                          Delete
-                        </button>
+
+                      <td data-label="Category">
+                        <span className="badge badge-gray">
+                          {doc.categories?.name || 'Uncategorized'}
+                        </span>
+                      </td>
+
+                      <td data-label="File Type">
+                        <span className="badge badge-blue" style={{ textTransform: 'uppercase' }}>
+                          {currentVer?.file_type || currentVer?.mime_type?.split('/')?.[1] || 'PDF'}
+                        </span>
+                      </td>
+
+                      <td data-label="Size" style={{ color: '#64748B' }}>
+                        {formatFileSize(currentVer?.file_size)}
+                      </td>
+
+                      <td data-label="Version">
+                        <span className="badge badge-green">v{doc.current_version || 1}</span>
+                      </td>
+
+                      <td data-label="Upload Date" style={{ color: '#64748B', fontSize: '0.8125rem' }}>
+                        {new Date(doc.created_at).toLocaleDateString()}
+                      </td>
+
+                      <td data-label="Stats">
+                        <div style={{ display: 'flex', gap: '8px', fontSize: '0.75rem', color: '#64748B' }}>
+                          <span><Eye size={12} /> {doc.total_views || 0}</span>
+                          <span><Download size={12} /> {doc.total_downloads || 0}</span>
+                        </div>
+                      </td>
+
+                      <td data-label="Actions" style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', gap: '6px' }}>
+                          <button
+                            className="btn-secondary"
+                            style={{ padding: '6px 10px', fontSize: '0.75rem' }}
+                            title="New Version"
+                            onClick={() => {
+                              setSelectedDoc(doc);
+                              setUploadMode('version');
+                              setShowUploadModal(true);
+                            }}
+                          >
+                            <Edit3 size={14} /> Version
+                          </button>
+
+                          <button
+                            className="btn-danger"
+                            style={{ padding: '6px 10px' }}
+                            title="Delete Document"
+                            onClick={() => setDeleteTarget(doc)}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
-
-                  </Fragment>
-                ))}
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
+      {/* Modals */}
       {showUploadModal && (
         <UploadDocumentModal
-          mode="create"
+          mode={uploadMode}
+          document={selectedDoc}
           categories={categories}
           onClose={() => setShowUploadModal(false)}
-          onSubmit={handleCreateDocument}
+          onSuccess={() => {
+            setShowUploadModal(false);
+            fetchData();
+          }}
         />
       )}
 
-      {deleteTargetDoc && (
+      {deleteTarget && (
         <ConfirmDeleteModal
-          documentTitle={deleteTargetDoc.title}
-          onCancel={() => setDeleteTargetDoc(null)}
-          onConfirm={handleDelete}
+          documentTitle={deleteTarget.title}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={handleDeleteConfirm}
         />
       )}
-    </DashboardLayout>
+    </div>
   );
 }
