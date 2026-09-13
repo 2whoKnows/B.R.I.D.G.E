@@ -71,6 +71,16 @@ export async function getSignedDownloadUrl(filePath, expiresInSeconds = 60) {
   return data.signedUrl;
 }
 
+export async function getSignedPreviewUrl(filePath, expiresInSeconds = 3600) {
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(filePath, expiresInSeconds);
+
+  if (error) throw error;
+  // Add download parameter to force inline preview
+  return `${data.signedUrl}&download=0`;
+}
+
 export async function recordDownload({ documentId, userId, versionId = null }) {
   await supabase.rpc("increment_document_downloads", { doc_id: documentId });
 
@@ -133,6 +143,26 @@ export async function getCategories() {
   return data ?? [];
 }
 
+export async function createCategory(name) {
+  const { data, error } = await supabase
+    .from("categories")
+    .insert({ name, is_active: true })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteCategory(categoryId) {
+  const { error } = await supabase
+    .from("categories")
+    .update({ is_active: false })
+    .eq("id", categoryId);
+
+  if (error) throw error;
+}
+
 export async function getCurrentUserRole() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
@@ -148,6 +178,8 @@ export async function getCurrentUserRole() {
 }
 
 export async function uploadNewDocument({ title, description, categoryId, file, userId }) {
+  console.log('Upload data:', { title, description, categoryId, file, userId });
+  
   const { data: doc, error: docError } = await supabase
     .from("documents")
     .insert({
@@ -160,7 +192,10 @@ export async function uploadNewDocument({ title, description, categoryId, file, 
     .select()
     .single();
 
-  if (docError) throw docError;
+  if (docError) {
+    console.error('Document insert error:', docError);
+    throw docError;
+  }
 
   const filePath = `${doc.id}/v1/${file.name}`;
 
