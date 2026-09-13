@@ -1,0 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# SPA fallback — all routes that don't match a static file serve index.html
+# so React Router can handle client-side navigation and direct URL loads.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
