@@ -1,5 +1,8 @@
 import { useState } from "react";
+import { Upload, X, FileText, CheckCircle } from "lucide-react";
 import "../styles/UploadDocumentModal.css";
+// login-label, login-input, form-group, login-error come from Login.css
+import "../styles/Login.css";
 
 export default function UploadDocumentModal({
   mode = "create",
@@ -24,11 +27,11 @@ export default function UploadDocumentModal({
     setError("");
 
     if (!isVersionMode && !title.trim()) {
-      setError("Enter a document title.");
+      setError("Please enter a document title.");
       return;
     }
     if (!file) {
-      setError("Choose a file to upload.");
+      setError("Please choose a file to upload.");
       return;
     }
 
@@ -47,7 +50,7 @@ export default function UploadDocumentModal({
       setSuccess(true);
     } catch (err) {
       console.error("Upload failed:", err);
-      setError(err.message ?? "Upload failed. Try again.");
+      setError(err.message ?? "Upload failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -56,95 +59,152 @@ export default function UploadDocumentModal({
   return (
     <div className="udm-overlay" onClick={onClose}>
       <div className="udm-card" onClick={(e) => e.stopPropagation()}>
-        <h2 className="udm-title">
-          {isVersionMode ? "Upload New Version" : "Upload Document"}
-        </h2>
-        {isVersionMode && (
-          <p className="udm-subtitle">
-            {document?.title} — currently v{document?.current_version}
-          </p>
-        )}
 
-        {error && <div className="udm-error">{error}</div>}
+        {/* Header */}
+        <div className="udm-header">
+          <div className="udm-header-left">
+            <div className="kpi-icon-wrap" style={{ width: "36px", height: "36px" }}>
+              <Upload size={17} />
+            </div>
+            <div>
+              <h2 className="udm-title">
+                {isVersionMode ? "Upload New Version" : "Upload Document"}
+              </h2>
+              {isVersionMode && (
+                <p className="udm-subtitle">
+                  {document?.title} — currently v{document?.current_version}
+                </p>
+              )}
+            </div>
+          </div>
+          <button className="udm-close-btn" onClick={onClose} aria-label="Close modal">
+            <X size={18} />
+          </button>
+        </div>
 
+        {/* Error banner */}
+        {error && <div className="login-error">{error}</div>}
+
+        {/* Success state */}
         {success ? (
           <div className="udm-success">
-            <div className="udm-success-icon">✓</div>
-            <p>Upload successful.</p>
-            <button type="button" className="udm-btn" onClick={onClose}>
-              Close
+            <div className="udm-success-icon">
+              <CheckCircle size={28} />
+            </div>
+            <p className="udm-success-text">Upload successful.</p>
+            <button type="button" className="btn-primary" style={{ width: "100%" }} onClick={onClose}>
+              Done
             </button>
           </div>
         ) : (
           <form className="udm-form" onSubmit={handleSubmit} noValidate>
+
             {!isVersionMode && (
               <>
-                <label className="udm-label" htmlFor="doc-title">Title</label>
-                <input
-                  id="doc-title"
-                  type="text"
-                  className="udm-input"
-                  placeholder="Document title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
+                {/* Title */}
+                <div className="form-group">
+                  <label className="login-label" htmlFor="doc-title">Title</label>
+                  <input
+                    id="doc-title"
+                    type="text"
+                    className="login-input"
+                    placeholder="e.g. Course Syllabus AY 2025–2026"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
+                </div>
 
-                <label className="udm-label" htmlFor="doc-description">Description</label>
-                <textarea
-                  id="doc-description"
-                  className="udm-textarea"
-                  placeholder="Optional description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={3}
-                />
+                {/* Description */}
+                <div className="form-group">
+                  <label className="login-label" htmlFor="doc-description">Description</label>
+                  <textarea
+                    id="doc-description"
+                    className="login-input udm-textarea"
+                    placeholder="Brief description of the document (optional)"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={3}
+                  />
+                </div>
 
-                <label className="udm-label" htmlFor="doc-category">Category</label>
-                <select
-                  id="doc-category"
-                  className="udm-input"
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                >
-                  <option value="">Uncategorized</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
+                {/* Category */}
+                <div className="form-group">
+                  <label className="login-label" htmlFor="doc-category">Category</label>
+                  <select
+                    id="doc-category"
+                    className="login-input"
+                    value={categoryId}
+                    onChange={(e) => setCategoryId(e.target.value)}
+                  >
+                    <option value="">Uncategorized</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
               </>
             )}
 
             {isVersionMode && (
-              <>
-                <label className="udm-label" htmlFor="change-notes">Change Notes</label>
+              <div className="form-group">
+                <label className="login-label" htmlFor="change-notes">Change Notes</label>
                 <textarea
                   id="change-notes"
-                  className="udm-textarea"
+                  className="login-input udm-textarea"
                   placeholder="What changed in this version? (optional)"
                   value={changeNotes}
                   onChange={(e) => setChangeNotes(e.target.value)}
                   rows={3}
                 />
-              </>
+              </div>
             )}
 
-            <label className="udm-label" htmlFor="doc-file">File</label>
-            <input
-              id="doc-file"
-              type="file"
-              className="udm-file-input"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            />
-            {file && <span className="udm-file-name">{file.name}</span>}
+            {/* File Input — hidden native input wrapped inside the styled label */}
+            <div className="form-group">
+              <span className="login-label">File</span>
+              <label className="udm-file-label">
+                <input
+                  id="doc-file"
+                  type="file"
+                  className="udm-file-hidden"
+                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                />
+                <div className="udm-file-label-inner">
+                  <FileText size={16} className="udm-file-icon" />
+                  <span className={`udm-file-label-text${file ? " has-file" : ""}`}>
+                    {file ? file.name : "Choose file…"}
+                  </span>
+                  <span className="udm-file-browse-btn">Browse</span>
+                </div>
+              </label>
+              {file && (
+                <p className="udm-file-hint">
+                  {(file.size / 1024 / 1024).toFixed(2)} MB &middot; {file.type || "unknown type"}
+                </p>
+              )}
+            </div>
 
+            {/* Actions */}
             <div className="udm-actions">
-              <button type="button" className="udm-btn udm-btn-secondary" onClick={onClose} disabled={loading}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={onClose}
+                disabled={loading}
+                style={{ flex: 1 }}
+              >
                 Cancel
               </button>
-              <button type="submit" className="udm-btn" disabled={loading}>
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={loading}
+                style={{ flex: 1 }}
+              >
                 {loading ? "Uploading…" : isVersionMode ? "Upload Version" : "Upload"}
               </button>
             </div>
+
           </form>
         )}
       </div>
