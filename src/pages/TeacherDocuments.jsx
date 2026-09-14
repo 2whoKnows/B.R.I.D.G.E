@@ -65,10 +65,11 @@ export default function TeacherDocuments() {
     const ver = doc.document_versions?.[0];
     if (!ver) return;
     try {
-      const downloadUrl = await getSignedDownloadUrl(ver.file_path, 60);
+      const fileName = ver.file_name || doc.title || 'document';
+      const downloadUrl = await getSignedDownloadUrl(ver.file_path, 60, fileName);
       const link = document.createElement('a');
       link.href = downloadUrl;
-      link.download = ver.file_name || 'document';
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

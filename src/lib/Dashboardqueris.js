@@ -30,6 +30,22 @@ export async function getTotalTeachers() {
   return count ?? 0;
 }
 
+export async function getTotalViews() {
+  // SUM over the documents.total_views counter column. Each row's counter is
+  // bumped by recordView()'s increment_document_views RPC on real preview
+  // opens, so the total is a live aggregate — never a fabricated formula.
+  const { data, error } = await supabase
+    .from("documents")
+    .select("total_views");
+
+  if (error) throw error;
+
+  return (data ?? []).reduce(
+    (sum, row) => sum + (Number(row.total_views) || 0),
+    0
+  );
+}
+
 export async function getTotalDownloads() {
   const { count, error } = await supabase
     .from("download_logs")
@@ -51,6 +67,33 @@ export async function getDownloadsThisMonth() {
 
   if (error) throw error;
   return count ?? 0;
+}
+
+// --- Monthly views + downloads (real per-month aggregates for charts) ----
+
+export async function getMonthlyViewAnalytics() {
+  const yearStart = new Date(new Date().getFullYear(), 0, 1).toISOString();
+
+  const { data, error } = await supabase
+    .from("activity_logs")
+    .select("created_at")
+    .eq("action", "view")
+    .gte("created_at", yearStart);
+
+  if (error) throw error;
+
+  const monthLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const counts = new Array(12).fill(0);
+
+  (data ?? []).forEach((row) => {
+    const m = new Date(row.created_at).getMonth();
+    counts[m] += 1;
+  });
+
+  const currentMonth = new Date().getMonth();
+  return monthLabels
+    .slice(0, currentMonth + 1)
+    .map((label, i) => ({ label, value: counts[i] }));
 }
 
 // --- Download analytics (monthly totals for the current year) --------
@@ -236,19 +279,20 @@ export async function getDownloadsByCategory(range = '30d') {
   // Get document categories
   const { data: documents, error: docsError } = await supabase
     .from("documents")
-    .select("id, category")
+    .select("id, category_id, categories ( name )")
     .in("id", documentIds);
 
   if (docsError) throw docsError;
 
-  // Count downloads by category
+  // Count downloads by category name
   const categoryCounts = {};
   const docsById = new Map((documents ?? []).map((doc) => [doc.id, doc]));
 
   (data ?? []).forEach((row) => {
     const doc = docsById.get(row.document_id);
-    if (doc && doc.category) {
-      categoryCounts[doc.category] = (categoryCounts[doc.category] || 0) + 1;
+    const categoryName = doc?.categories?.name;
+    if (categoryName) {
+      categoryCounts[categoryName] = (categoryCounts[categoryName] || 0) + 1;
     }
   });
 
@@ -338,9 +382,11 @@ export async function getDashboardData(range = '30d') {
   const [
     totalDocuments,
     totalTeachers,
+    totalViews,
     totalDownloads,
     downloadsThisMonth,
     monthlyAnalytics,
+    monthlyViews,
     mostDownloaded,
     recentActivity,
     topDownloaders,
@@ -349,9 +395,11 @@ export async function getDashboardData(range = '30d') {
   ] = await Promise.all([
     getTotalDocuments(),
     getTotalTeachers(),
+    getTotalViews(),
     getTotalDownloads(),
     getDownloadsThisMonth(),
     getMonthlyDownloadAnalytics(),
+    getMonthlyViewAnalytics(),
     getMostDownloadedDocuments(),
     getRecentActivity(),
     getTopDownloaders(10, range),
@@ -362,9 +410,11 @@ export async function getDashboardData(range = '30d') {
   return {
     totalDocuments,
     totalTeachers,
+    totalViews,
     totalDownloads,
     downloadsThisMonth,
     monthlyAnalytics,
+    monthlyViews,
     mostDownloaded,
     recentActivity,
     topDownloaders,

@@ -18,6 +18,7 @@ export default function Analytics() {
   const [data, setData] = useState({
     totalDocuments: 0,
     totalTeachers: 0,
+    totalViews: 0,
     totalDownloads: 0,
     downloadsThisMonth: 0,
     monthlyAnalytics: [],
@@ -44,6 +45,7 @@ export default function Analytics() {
 
   const maxVal = Math.max(
     ...((data.monthlyAnalytics || []).map(m => Number(m.value) || 0)),
+    ...((data.monthlyViews || []).map(m => Number(m.value) || 0)),
     10
   );
 
@@ -85,7 +87,7 @@ export default function Analytics() {
             <Eye size={20} />
           </div>
           <div className="kpi-content">
-            <div className="kpi-val">{loading ? '—' : (data.totalDownloads * 3 + 140)}</div>
+            <div className="kpi-val">{loading ? '—' : (data.totalViews ?? 0)}</div>
             <div className="kpi-lbl">Total Views</div>
           </div>
         </div>
@@ -152,8 +154,8 @@ export default function Analytics() {
                 {data.monthlyAnalytics.map((item, idx) => {
                   const val = Number(item.value) || 0;
                   const dlHeightPct = Math.max(8, Math.round((val / maxVal) * 100));
-                  const viewsVal = val * 2 + 5;
-                  const viewsHeightPct = Math.min(100, Math.max(12, Math.round((viewsVal / (maxVal * 2 + 5)) * 100)));
+                  const viewsVal = Number(data.monthlyViews?.[idx]?.value) || 0;
+                  const viewsHeightPct = Math.max(8, Math.round((viewsVal / maxVal) * 100));
 
                   return (
                     <div key={idx} className="chart-col">

@@ -2,11 +2,19 @@ import { supabase } from "./supabase";
 
 const BUCKET = "documents";
 
-function withCurrentVersion(document) {
-  const versions = [...(document.document_versions ?? [])].sort(
-    (a, b) => b.version_number - a.version_number
-  );
-  const currentVersion = versions[0] ?? null;
+function resolveCurrentVersion(document) {
+  const versions = [...(document.document_versions ?? [])];
+  // Ground truth join: documents.current_version -> document_versions.version_number.
+  // Prefer the exact match; fall back to the newest version only when the
+  // current_version pointer has no matching row (e.g. stale pointer).
+  const exact =
+    document.current_version != null
+      ? versions.find((v) => v.version_number === document.current_version)
+      : null;
+  const currentVersion =
+    exact ??
+    versions.sort((a, b) => (b.version_number ?? 0) - (a.version_number ?? 0))[0] ??
+    null;
 
   return {
     ...document,
@@ -17,6 +25,10 @@ function withCurrentVersion(document) {
     version: currentVersion?.version_number ?? document.current_version ?? null,
     version_id: currentVersion?.id ?? null,
   };
+}
+
+function withCurrentVersion(document) {
+  return resolveCurrentVersion(document);
 }
 
 export async function listDocuments({
@@ -62,10 +74,15 @@ export async function getDocument(documentId) {
   return withCurrentVersion(data);
 }
 
-export async function getSignedDownloadUrl(filePath, expiresInSeconds = 60) {
+export async function getSignedDownloadUrl(filePath, expiresInSeconds = 60, fileName = null) {
   const { data, error } = await supabase.storage
     .from(BUCKET)
-    .createSignedUrl(filePath, expiresInSeconds);
+    .createSignedUrl(filePath, expiresInSeconds, {
+      // Passing a non-empty string sets Content-Disposition: attachment; filename=<fileName>
+      // so the browser saves with the correct name. Falls back to the raw
+      // storage path filename if no explicit name is provided.
+      download: fileName || true,
+    });
 
   if (error) throw error;
   return data.signedUrl;
@@ -74,11 +91,17 @@ export async function getSignedDownloadUrl(filePath, expiresInSeconds = 60) {
 export async function getSignedPreviewUrl(filePath, expiresInSeconds = 3600) {
   const { data, error } = await supabase.storage
     .from(BUCKET)
-    .createSignedUrl(filePath, expiresInSeconds);
+    .createSignedUrl(filePath, expiresInSeconds, {
+      // download:false → Supabase sets Content-Disposition: inline so the
+      // browser renders the file in-place rather than saving it to disk.
+      // Do NOT append &download=0 manually — the string "0" is truthy and
+      // Supabase uses it as the attachment filename, causing an auto-download
+      // with the saved filename literally being "0".
+      download: false,
+    });
 
   if (error) throw error;
-  // Add download parameter to force inline preview
-  return `${data.signedUrl}&download=0`;
+  return data.signedUrl;
 }
 
 export async function recordDownload({ documentId, userId, versionId = null }) {
@@ -124,12 +147,22 @@ export async function listDocumentsWithStats() {
       category_id,
       categories ( name ),
       profiles:uploaded_by ( full_name ),
-      document_versions ( id, version_number, file_name, file_path, file_size, mime_type, created_at )
+      document_versions ( id, version_number, file_name, file_path, file_size, file_type, mime_type, created_at )
     `)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return data ?? [];
+  // Sort nested versions client-side (PostgREST does not guarantee nested
+  // order) so that document_versions[0] is always the newest version.
+  // This keeps every `doc.document_versions?.[0]` call-site pointed at the
+  // current version's real file_path/mime_type.
+  const rows = (data ?? []).map((doc) => ({
+    ...doc,
+    document_versions: [...(doc.document_versions ?? [])].sort(
+      (a, b) => (b.version_number ?? 0) - (a.version_number ?? 0)
+    ),
+  }));
+  return rows;
 }
 
 export async function getCategories() {
@@ -276,7 +309,8 @@ export async function uploadNewVersion({ documentId, nextVersion, file, userId, 
 export async function recordView(documentId, userId, role) {
   if (role === "document_manager" || role === "system_admin") return;
 
-  await supabase.rpc("increment_document_views", { doc_id: documentId });
+  const { error: rpcError } = await supabase.rpc("increment_document_views", { doc_id: documentId });
+  if (rpcError) throw rpcError;
 
   if (userId) {
     await supabase.from("activity_logs").insert({

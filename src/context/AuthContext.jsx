@@ -3,6 +3,26 @@ import { getSession, loadProfile, onAuthStateChange, signOut as authSignOut } fr
 
 const AuthContext = createContext(null);
 
+// Swallow benign "play() interrupted by pause()" rejections that originate
+// outside our code: there is no <video>/<audio> in this app, so this comes
+// from a browser extension or embedded password-manager media probe on
+// pages like /login. Without this, it surfaces as an uncaught console error.
+if (typeof window !== "undefined" && !window.__bridgeMediaGuardInstalled) {
+  window.__bridgeMediaGuardInstalled = true;
+  window.addEventListener("unhandledrejection", (event) => {
+    const reason = event?.reason;
+    const name = reason?.name;
+    const message = String(reason?.message ?? reason ?? "");
+    if (
+      name === "AbortError" &&
+      (/play\(\) request was interrupted/i.test(message) ||
+        /interrupted by a call to pause\(\)/i.test(message))
+    ) {
+      event.preventDefault();
+    }
+  });
+}
+
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
