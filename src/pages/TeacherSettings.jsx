@@ -106,9 +106,6 @@ export default function TeacherSettings() {
             <button className="btn-secondary" style={{ fontSize: '0.8125rem' }}>
               Change Password
             </button>
-            <button className="btn-secondary" style={{ fontSize: '0.8125rem' }}>
-              Enable Two-Factor Authentication
-            </button>
           </div>
         </div>
 
