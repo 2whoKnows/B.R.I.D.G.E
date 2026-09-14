@@ -81,7 +81,10 @@ export default function Login() {
           data.user.user_metadata?.name ||
           data.user.email.split('@')[0]
 
-        const { data: newProfile, error: upsertError } = await supabase
+        // ignoreDuplicates:true means ON CONFLICT DO NOTHING — a chained
+        // .select().single() would return null for an existing row, so we
+        // do the insert and the fetch as two separate calls.
+        const { error: upsertError } = await supabase
           .from('profiles')
           .upsert(
             {
@@ -91,19 +94,36 @@ export default function Login() {
               role: 'teacher',
               is_active: true,
             },
-            { onConflict: 'id' }
+            // ignoreDuplicates:true → INSERT ... ON CONFLICT DO NOTHING
+            // If a row already exists for this id (e.g. the document manager
+            // whose role was assigned manually in the DB), this is a no-op
+            // and their role is never overwritten.
+            { onConflict: 'id', ignoreDuplicates: true }
           )
-          .select('role, is_active')
-          .single()
 
-        if (upsertError || !newProfile) {
+        if (upsertError) {
           console.error('Profile creation failed on login:', upsertError)
           setError('Unable to load account profile. Contact system administration.')
           await supabase.auth.signOut()
           return
         }
 
-        profile = newProfile
+        // Re-fetch the profile regardless of whether the insert was a new
+        // row or a no-op — this always returns the correct, current data.
+        const { data: fetchedProfile, error: fetchError } = await supabase
+          .from('profiles')
+          .select('role, is_active')
+          .eq('id', userId)
+          .single()
+
+        if (fetchError || !fetchedProfile) {
+          console.error('Profile fetch failed after upsert:', fetchError)
+          setError('Unable to load account profile. Contact system administration.')
+          await supabase.auth.signOut()
+          return
+        }
+
+        profile = fetchedProfile
       }
 
       if (profile.is_active === false) {

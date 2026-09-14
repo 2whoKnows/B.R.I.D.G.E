@@ -66,10 +66,11 @@ export default function AuthCallback() {
       // based redirect below falls through to the catch-all branch.
       // Without is_active=true, the account-inactive guard kicks in and
       // immediately signs the user out.
-      // We use onConflict:'id' so an existing row (e.g. created by the DB
-      // trigger with a null role) gets patched — but only the fields listed
-      // here are touched, so a manager row won't have its role overwritten
-      // because managers always have a profile row before this fallback runs.
+      // ignoreDuplicates:true → INSERT ... ON CONFLICT DO NOTHING
+      // This means if a profile row already exists (e.g. the manager whose
+      // role was set manually in the DB), this call is a no-op and the
+      // existing role is never touched. Only brand-new users without any
+      // profile row will have a row created here with role='teacher'.
       const { error: upsertError } = await supabase.from('profiles').upsert(
         {
           id: user.id,
@@ -79,7 +80,7 @@ export default function AuthCallback() {
           role: 'teacher',
           is_active: true,
         },
-        { onConflict: 'id' }
+        { onConflict: 'id', ignoreDuplicates: true }
       )
 
       return upsertError
