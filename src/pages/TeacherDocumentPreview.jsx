@@ -73,10 +73,10 @@ export default function TeacherDocumentPreview() {
   const handleDownload = async () => {
     if (!doc || !doc.file_path) return;
     try {
-      const downloadUrl = await getSignedDownloadUrl(doc.file_path, 60);
+      const downloadUrl = await getSignedDownloadUrl(doc.file_path, 60, doc.file_name || doc.title || 'document');
       const link = document.createElement('a');
       link.href = downloadUrl;
-      link.download = doc.file_name || 'document';
+      link.download = doc.file_name || doc.title || 'document';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
