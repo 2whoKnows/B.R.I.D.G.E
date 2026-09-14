@@ -6,7 +6,7 @@ import '../styles/Pages.css';
 export default function AddTeacherModal({ onClose, onSuccess }) {
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
-  const [department, setDepartment] = useState('Computer Science');
+  const [department, setDepartment] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -32,7 +32,7 @@ export default function AddTeacherModal({ onClose, onSuccess }) {
         options: {
           data: {
             full_name: fullName.trim(),
-            department: department,
+            department: department.trim() || null,
             role: 'teacher',
           }
         }
@@ -49,7 +49,7 @@ export default function AddTeacherModal({ onClose, onSuccess }) {
             id: data.user.id,
             email: email.trim(),
             full_name: fullName.trim(),
-            department: department,
+            department: department.trim() || null,
             role: 'teacher',
             is_active: true,
           }, { onConflict: 'id' });
@@ -117,17 +117,13 @@ export default function AddTeacherModal({ onClose, onSuccess }) {
 
           <div className="form-group">
             <label className="login-label">Department</label>
-            <select
+            <input
+              type="text"
               className="login-input"
+              placeholder="e.g. Computer Science"
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
-            >
-              <option value="Computer Science">Computer Science</option>
-              <option value="Information Technology">Information Technology</option>
-              <option value="Engineering">Engineering</option>
-              <option value="Mathematics">Mathematics</option>
-              <option value="Business Administration">Business Administration</option>
-            </select>
+            />
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
