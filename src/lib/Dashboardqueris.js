@@ -236,19 +236,20 @@ export async function getDownloadsByCategory(range = '30d') {
   // Get document categories
   const { data: documents, error: docsError } = await supabase
     .from("documents")
-    .select("id, category")
+    .select("id, category_id, categories ( name )")
     .in("id", documentIds);
 
   if (docsError) throw docsError;
 
-  // Count downloads by category
+  // Count downloads by category name
   const categoryCounts = {};
   const docsById = new Map((documents ?? []).map((doc) => [doc.id, doc]));
 
   (data ?? []).forEach((row) => {
     const doc = docsById.get(row.document_id);
-    if (doc && doc.category) {
-      categoryCounts[doc.category] = (categoryCounts[doc.category] || 0) + 1;
+    const categoryName = doc?.categories?.name;
+    if (categoryName) {
+      categoryCounts[categoryName] = (categoryCounts[categoryName] || 0) + 1;
     }
   });
 
