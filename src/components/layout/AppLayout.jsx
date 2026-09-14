@@ -49,19 +49,6 @@ export default function AppLayout({ roleOverride = null }) {
 
   const navItems = isManager ? managerNavItems : teacherNavItems;
 
-  const mobileBottomNavItems = isManager ? [
-    { label: 'Dashboard', path: '/manager/dashboard', icon: LayoutDashboard },
-    { label: 'Documents', path: '/manager/documents', icon: FileText },
-    { label: 'Analytics', path: '/manager/analytics', icon: BarChart3 },
-    { label: 'Users', path: '/manager/users', icon: UsersIcon },
-    { label: 'Profile', path: '/manager/profile', icon: User },
-  ] : [
-    { label: 'Home', path: '/teacher', icon: LayoutDashboard },
-    { label: 'Documents', path: '/teacher/documents', icon: FileText },
-    { label: 'Favorites', path: '/teacher/favorites', icon: Star },
-    { label: 'Profile', path: '/teacher/profile', icon: User },
-  ];
-
   const handleLogout = async () => {
     try {
       await signOut();
@@ -185,24 +172,6 @@ export default function AppLayout({ roleOverride = null }) {
           <Outlet />
         </main>
       </div>
-
-      {/* Mobile Bottom Navigation */}
-      <nav className="mobile-bottom-nav">
-        {mobileBottomNavItems.map((item) => {
-          const IconComp = item.icon;
-          const isActive = location.pathname === item.path;
-          return (
-            <button
-              key={item.path}
-              className={`mobile-nav-btn ${isActive ? 'active' : ''}`}
-              onClick={() => navigate(item.path)}
-            >
-              <IconComp size={20} />
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
-      </nav>
     </div>
   );
 }
