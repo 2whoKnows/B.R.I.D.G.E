@@ -66,6 +66,9 @@ export default function AuthCallback() {
       // based redirect below falls through to the catch-all branch.
       // Without is_active=true, the account-inactive guard kicks in and
       // immediately signs the user out.
+      // NOTE: password_set is deliberately NOT set here. A brand-new user
+      // (Google or email) must keep password_set=false so the first-login
+      // gate below routes them to /create-password exactly once.
       // ignoreDuplicates:true → INSERT ... ON CONFLICT DO NOTHING
       // This means if a profile row already exists (e.g. the manager whose
       // role was set manually in the DB), this call is a no-op and the
@@ -87,6 +90,13 @@ export default function AuthCallback() {
     }
 
     async function handleCallback() {
+      // Validate against the SERVER, not just the localStorage cache.
+      // getSession() reads the cached JWT only — after you delete the auth
+      // user + profiles row in the dashboard, the old token is still sitting
+      // in localStorage and getSession() happily returns it (with the OLD
+      // user id) until it expires. getUser() hits /auth/v1/user and 401s on
+      // a deleted user, which is how we detect the stale cache and force a
+      // clean sign-out instead of routing a ghost session to the dashboard.
       const {
         data: { session },
         error: sessionError,
@@ -106,8 +116,31 @@ export default function AuthCallback() {
         return
       }
 
-      const user = session.user
+      const { data: { user: serverUser }, error: userError } = await supabase.auth.getUser()
+
+      if (cancelled) return
+
+      if (userError || !serverUser || serverUser.id !== session.user.id) {
+        console.warn('Stale cached session (auth user deleted or rotated). Clearing and restarting login.', userError)
+        await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
+        if (cancelled) return
+        setError('Previous session was cleared. Redirecting to login…')
+        setTimeout(() => {
+          navigate('/login', { replace: true })
+        }, 1200)
+        return
+      }
+
+      const user = serverUser
       const userId = user.id
+
+      // Provider is only used for the login activity label — NOT for routing.
+      // New vs returning is decided purely by profiles.password_set below, so
+      // Google first-timers see /create-password and Google returners don't.
+      const identities = Array.isArray(user.identities) ? user.identities : []
+      const hasGoogleIdentity = identities.some((i) => i?.provider === 'google')
+      const isOAuthUser =
+        hasGoogleIdentity || (user.app_metadata?.provider && user.app_metadata.provider !== 'email')
 
       let { profile, error: profileError } = await fetchProfileWithRetry(userId)
 
@@ -189,7 +222,13 @@ export default function AuthCallback() {
         return
       }
 
-      // First login: password has not been created yet
+      // First-login gate: brand-new users (Google AND email) go to
+      // /create-password exactly ONCE, when their profiles row still has
+      // password_set=false. Returning users have password_set=true (set by
+      // CreatePassword on first setup) so they skip straight to the
+      // dashboard. Deleted-then-recreated accounts get a fresh profiles row
+      // with password_set=false again, so they correctly see the screen.
+      // This is derived fresh from the DB every login — no localStorage flag.
       if (profile.password_set === false) {
         navigate('/create-password', {
           replace: true,
@@ -200,11 +239,6 @@ export default function AuthCallback() {
 
         return
       }
-
-      // Existing user with password
-      await logActivity('login', {
-        method: 'google',
-      })
 
       // Redirect according to role
       if (profile.role === 'system_admin') {
