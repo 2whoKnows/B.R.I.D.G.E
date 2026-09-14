@@ -6,15 +6,6 @@ import { updateOwnProfile, subjectsToInput } from '../lib/profileQueries';
 import '../styles/Pages.css';
 import '../styles/Login.css';
 
-const DEPARTMENT_OPTIONS = [
-  'Computer Science',
-  'Information Technology',
-  'Engineering',
-  'Mathematics',
-  'Business Administration',
-  'General Faculty',
-];
-
 export default function Profile() {
   const { profile, role, refreshProfile } = useAuth();
   return <ProfileView key={profile?.id ?? 'loading'} profile={profile} role={role} refreshProfile={refreshProfile} />;
@@ -189,22 +180,15 @@ function ProfileView({ profile, role, refreshProfile }) {
 
                 <div className="form-group">
                   <label className="login-label" htmlFor="profile-department">Department</label>
-                  <select
+                  <input
                     id="profile-department"
+                    type="text"
                     className="login-input"
-                    value={DEPARTMENT_OPTIONS.includes(department) ? department : ''}
+                    placeholder="e.g. Computer Science"
+                    value={department}
                     onChange={(e) => setDepartment(e.target.value)}
-                  >
-                    <option value="" disabled>Select department</option>
-                    {DEPARTMENT_OPTIONS.map((d) => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
-                  {!DEPARTMENT_OPTIONS.includes(department) && department ? (
-                    <span style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '4px', display: 'block' }}>
-                      Current value: {department} — pick a department to change it.
-                    </span>
-                  ) : null}
+                    autoComplete="organization"
+                  />
                 </div>
 
                 <div className="form-group">
