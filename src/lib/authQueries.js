@@ -7,7 +7,7 @@ export async function getSession() {
 }
 
 export async function loadProfile(userId) {
-  const { data, error } = await supabase.from("profiles").select("id, email, full_name, role, department, is_active").eq("id", userId).single();
+  const { data, error } = await supabase.from("profiles").select("id, email, full_name, role, department, grade_level, subjects, avatar_url, is_active").eq("id", userId).single();
   if (error) throw error;
   return data;
 }
