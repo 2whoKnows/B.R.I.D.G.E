@@ -20,13 +20,24 @@ export default function TeacherDocuments() {
   const [fileTypeFilter, setFileTypeFilter] = useState('');
   const [sortBy, setSortBy] = useState('newest');
 
-  const [favorites, setFavorites] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('bridge_teacher_favorites')) || [];
-    } catch {
-      return [];
+  const favoritesKey = profile?.id ? `bridge_teacher_favorites:${profile.id}` : null;
+
+  // Favorites are per-account: re-load when the signed-in user changes, and
+  // never fall back to another account's list. A single global key is what
+  // leaked favorites across deleted/recreated accounts on shared browsers.
+  const [favorites, setFavorites] = useState([]);
+
+  useEffect(() => {
+    if (!favoritesKey) {
+      setFavorites([]);
+      return;
     }
-  });
+    try {
+      setFavorites(JSON.parse(localStorage.getItem(favoritesKey)) || []);
+    } catch {
+      setFavorites([]);
+    }
+  }, [favoritesKey]);
 
   const fetchData = async () => {
     try {
@@ -57,7 +68,7 @@ export default function TeacherDocuments() {
       updated = [...favorites, docId];
     }
     setFavorites(updated);
-    localStorage.setItem('bridge_teacher_favorites', JSON.stringify(updated));
+    if (favoritesKey) localStorage.setItem(favoritesKey, JSON.stringify(updated));
   };
 
   const handleDownload = async (doc, e) => {
