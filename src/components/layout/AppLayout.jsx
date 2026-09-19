@@ -11,10 +11,8 @@ import {
   LogOut, 
   Star, 
   History, 
-  Bell, 
   Menu, 
-  X,
-  Search
+  X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Logo from '../ui/Logo';
@@ -81,10 +79,6 @@ export default function AppLayout({ roleOverride = null }) {
           <Logo size={32} variant="light" showText={true} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button className="mobile-notification-btn" aria-label="Notifications">
-            <Bell size={19} />
-            <span className="notification-dot"></span>
-          </button>
           <div className="user-avatar" style={{ width: '32px', height: '32px', fontSize: '0.8rem' }}>
             {userInitial}
           </div>
@@ -148,11 +142,6 @@ export default function AppLayout({ roleOverride = null }) {
             <span className="role-badge">
               {isManager ? 'Document Manager' : 'Teacher'}
             </span>
-
-            <button className="header-icon-btn" aria-label="Notifications">
-              <Bell size={18} />
-              <span className="notification-dot"></span>
-            </button>
 
             <div 
               className="user-profile-menu"

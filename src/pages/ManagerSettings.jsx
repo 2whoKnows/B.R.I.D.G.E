@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Database, Bell, Shield, FolderPlus, Save, Trash2 } from 'lucide-react';
+import { Settings as SettingsIcon, FolderPlus, Trash2 } from 'lucide-react';
 import { getCategories, createCategory, deleteCategory } from '../lib/documentQueries';
 import '../styles/Pages.css';
 
@@ -54,11 +54,6 @@ export default function ManagerSettings() {
     }
   };
 
-  const handleSave = () => {
-    setSavedMsg('Settings updated successfully.');
-    setTimeout(() => setSavedMsg(''), 3000);
-  };
-
   return (
     <div className="page-container" style={{ maxWidth: '900px' }}>
       <div className="bridge-card">
@@ -111,26 +106,8 @@ export default function ManagerSettings() {
           )}
         </div>
 
-        {/* Storage Overview */}
-        <div style={{ padding: '16px 0', borderBottom: '1px solid #E2E8F0' }}>
-          <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0F172A', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Database size={16} /> Cloud Storage Allocation
-          </h3>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ fontSize: '0.8125rem', color: '#64748B' }}>Supabase Storage Bucket (`documents`)</span>
-            <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#0F172A' }}>1.2 GB / 50 GB Used</span>
-          </div>
-          <div style={{ width: '100%', height: '8px', backgroundColor: '#E2E8F0', borderRadius: '4px', overflow: 'hidden' }}>
-            <div style={{ width: '2.4%', height: '100%', backgroundColor: '#2563EB', borderRadius: '4px' }} />
-          </div>
-        </div>
-
-        {/* Save Actions */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '12px' }}>
-          <button className="btn-primary" onClick={handleSave}>
-            <Save size={16} /> Save Preferences
-          </button>
-        </div>
+        {/* The hardcoded storage allocation placeholder and the non-functional
+            Save Preferences control were removed. */}
       </div>
     </div>
   );
