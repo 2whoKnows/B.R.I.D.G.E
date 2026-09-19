@@ -27,8 +27,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
-  const [resetLoading, setResetLoading] = useState(false)
-  const [showResetModal, setShowResetModal] = useState(false)
 
   const redirectByRole = (role) => {
     if (role === 'system_admin') {
@@ -160,34 +158,12 @@ export default function Login() {
     }
   }
 
-  const handleForgotPassword = async (e) => {
+  // The dedicated /forgot-password page owns the whole reset-link flow
+  // (email input, send, resend). Carry over whatever the user already typed.
+  const handleForgotPassword = (e) => {
     e.preventDefault()
     setError('')
-
-    if (!email.trim()) {
-      setError('Please enter your email address above before requesting a password reset.')
-      return
-    }
-
-    setResetLoading(true)
-    try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        email.trim(),
-        { redirectTo: `${window.location.origin}/reset-password` }
-      )
-
-      if (resetError) {
-        setError('Could not send password reset email. Please try again.')
-        return
-      }
-
-      setShowResetModal(true)
-    } catch (err) {
-      console.error('Forgot password error:', err)
-      setError('An unexpected error occurred. Please try again.')
-    } finally {
-      setResetLoading(false)
-    }
+    navigate('/forgot-password', { state: { email: email.trim() } })
   }
 
   return (
@@ -252,9 +228,8 @@ export default function Login() {
               type="button"
               className="login-forgot-link"
               onClick={handleForgotPassword}
-              disabled={resetLoading}
             >
-              {resetLoading ? 'Sending…' : 'Forgot Password?'}
+              Forgot Password?
             </button>
           </div>
 
@@ -281,25 +256,6 @@ export default function Login() {
           <p>Authorized Academic Personnel Access Only</p>
         </div>
       </div>
-
-      {showResetModal && (
-        <div className="login-modal-overlay" onClick={() => setShowResetModal(false)}>
-          <div className="login-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="login-modal-icon">✓</div>
-            <h2 className="login-modal-title">Reset Link Sent</h2>
-            <p className="login-modal-text">
-              Instructions to reset your password have been sent to <strong>{email.trim()}</strong>.
-            </p>
-            <button
-              type="button"
-              className="login-modal-btn"
-              onClick={() => setShowResetModal(false)}
-            >
-              Done
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -15,21 +15,68 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
+  const [linkError, setLinkError] = useState('')
+  const exchangedRef = useRef(false)
 
   const strength = getPasswordStrength(password)
 
   useEffect(() => {
+    let cancelled = false
+
+    // The recovery email link is PKCE (`?code=...`), not the old `#access_token`
+    // hash. Exchanging the code is what establishes the recovery session and
+    // is what fires PASSWORD_RECOVERY; without it this page sits on
+    // "Verifying your reset link…" forever. exchangeCodeForSession consumes the
+    // code, so the ref guard keeps React 18/19 StrictMode double-effects (and
+    // any remount) from spending it twice.
+    async function establishRecoverySession() {
+      const params = new URLSearchParams(window.location.search)
+      const hasCode = params.has('code')
+
+      const { data: { session } } = await supabase.auth.getSession()
+      if (cancelled) return
+      if (session) {
+        setReady(true)
+        return
+      }
+
+      // Already in flight (StrictMode remount) — don't consume the code twice.
+      if (exchangedRef.current) return
+
+      if (!hasCode) return
+
+      exchangedRef.current = true
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(window.location.href)
+      if (cancelled) return
+
+      // History replace so a refresh doesn't replay the one-time code, and so
+      // the code never leaks via copy-paste of the URL.
+      window.history.replaceState(null, '', '/reset-password')
+
+      if (exchangeError) {
+        setLinkError('This reset link is invalid or has expired. Request a new one from the login screen.')
+        return
+      }
+
+      setReady(true)
+    }
+
     const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+      if (cancelled) return
       if (event === 'PASSWORD_RECOVERY') {
         setReady(true)
       }
+      if (event === 'SIGNED_OUT') {
+        setReady(false)
+      }
     })
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setReady(true)
-    })
+    establishRecoverySession()
 
-    return () => listener.subscription.unsubscribe()
+    return () => {
+      cancelled = true
+      listener.subscription.unsubscribe()
+    }
   }, [])
 
   const handleSubmit = async (e) => {
@@ -51,10 +98,23 @@ export default function ResetPassword() {
 
     setLoading(true)
     try {
+      // Re-check right before the write: AuthSessionMissingError ("Auth session
+      // missing!") is the classic symptom of submitting with an expired or
+      // never-established recovery session. Fail fast with a clear message.
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        setError('Your reset session has expired. Request a new reset link and try again.')
+        return
+      }
+
       const { data: { user }, error: updateError } = await supabase.auth.updateUser({ password })
 
       if (updateError) {
-        setError('Could not update password. Try again.')
+        if (updateError.name === 'AuthSessionMissingError' || /session/i.test(updateError.message || '')) {
+          setError('Your reset session has expired. Request a new reset link and try again.')
+        } else {
+          setError('Could not update password. Try again.')
+        }
         return
       }
 
@@ -81,9 +141,11 @@ export default function ResetPassword() {
         <img src={logo} alt="H2KNOW" className="reset-logo" />
         <h1 className="reset-title">Set New Password</h1>
 
-        {!ready && !done && (
+        {!ready && !done && !linkError && (
           <p className="reset-tagline">Verifying your reset link…</p>
         )}
+
+        {linkError && !done && <div className="reset-error" role="alert">{linkError}</div>}
 
         {error && <div className="reset-error">{error}</div>}
 
