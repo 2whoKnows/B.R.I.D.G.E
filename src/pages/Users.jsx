@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Search, UserPlus, Shield, CheckCircle, XCircle, Mail, Building } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Building } from 'lucide-react';
 import { listUsers, updateUserActive, updateUserRole } from '../lib/userQueries';
-import AddTeacherModal from './AddTeacherModal';
 import '../styles/Pages.css';
 
 export default function Users() {
@@ -9,7 +8,6 @@ export default function Users() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -74,11 +72,6 @@ export default function Users() {
             <option value="active">Active Only</option>
             <option value="inactive">Inactive Only</option>
           </select>
-
-          <button className="btn-primary" onClick={() => setShowAddModal(true)}>
-            <UserPlus size={16} />
-            Invite / Add Teacher
-          </button>
         </div>
       </div>
 
@@ -164,15 +157,6 @@ export default function Users() {
         </div>
       </div>
 
-      {showAddModal && (
-        <AddTeacherModal
-          onClose={() => setShowAddModal(false)}
-          onSuccess={() => {
-            setShowAddModal(false);
-            fetchUsers();
-          }}
-        />
-      )}
     </div>
   );
 }

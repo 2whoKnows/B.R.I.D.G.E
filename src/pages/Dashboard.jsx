@@ -6,7 +6,6 @@ import {
   Download, 
   TrendingUp, 
   Upload, 
-  UserPlus, 
   FileCheck,
   ArrowRight
 } from 'lucide-react';
@@ -14,7 +13,6 @@ import { getDashboardData } from '../lib/Dashboardqueris';
 import { getCategories, uploadNewDocument } from '../lib/documentQueries';
 import { useAuth } from '../context/AuthContext';
 import UploadDocumentModal from './UploadDocumentModal';
-import AddTeacherModal from './AddTeacherModal';
 import '../styles/Pages.css';
 
 export default function Dashboard({ managerName = 'Manager' }) {
@@ -31,7 +29,6 @@ export default function Dashboard({ managerName = 'Manager' }) {
   });
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [showInviteModal, setShowInviteModal] = useState(false);
   const [categories, setCategories] = useState([]);
 
   const loadData = async () => {
@@ -150,10 +147,6 @@ export default function Dashboard({ managerName = 'Manager' }) {
           <button className="btn-primary" onClick={() => setShowUploadModal(true)}>
             <Upload size={16} />
             Upload Document
-          </button>
-          <button className="btn-secondary" onClick={() => setShowInviteModal(true)}>
-            <UserPlus size={16} />
-            Add / Invite Teacher
           </button>
           <button className="btn-secondary" onClick={() => navigate('/manager/documents')}>
             <FileCheck size={16} />
@@ -317,16 +310,6 @@ export default function Dashboard({ managerName = 'Manager' }) {
           categories={categories}
           onClose={() => setShowUploadModal(false)}
           onSubmit={handleUploadSubmit}
-        />
-      )}
-
-      {showInviteModal && (
-        <AddTeacherModal
-          onClose={() => setShowInviteModal(false)}
-          onSuccess={() => {
-            setShowInviteModal(false);
-            loadData();
-          }}
         />
       )}
     </div>
