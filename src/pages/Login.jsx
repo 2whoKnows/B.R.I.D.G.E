@@ -57,7 +57,16 @@ export default function Login() {
       })
 
       if (signInError) {
-        setError('Invalid credentials. Please check your email and password.')
+        // Supabase returns the SAME error for "no such user" and "wrong
+        // password" (invalid_credentials) to prevent account enumeration, so
+        // the two can't be told apart with certainty. The message covers both
+        // honestly: managers retry their credentials, while anyone who typed
+        // an email that has no password account yet (teachers — there is no
+        // signUp flow) is pointed at the Google path, the only way a new
+        // account gets provisioned.
+        setError(
+          'No account found with this email, or the password is incorrect. New here? Try "Sign in with Google" to get started.'
+        )
         return
       }
 
@@ -249,8 +258,11 @@ export default function Login() {
           disabled={googleLoading}
         >
           <GoogleIcon />
-          {googleLoading ? 'Connecting…' : 'Institutional Google Sign-In'}
+          {googleLoading ? 'Connecting…' : 'Sign in with Google'}
         </button>
+        <p className="login-google-hint">
+          Don&apos;t have an account yet? Sign in with Google to get started.
+        </p>
 
         <div className="login-footer">
           <p>Authorized Academic Personnel Access Only</p>
