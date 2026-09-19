@@ -1,18 +1,12 @@
 import { useState } from 'react';
-import { Settings as SettingsIcon, User, Bell, Shield, Save } from 'lucide-react';
+import { Settings as SettingsIcon, User, Bell } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import '../styles/Pages.css';
 
 export default function TeacherSettings() {
   const { profile } = useAuth();
-  const [savedMsg, setSavedMsg] = useState('');
   const [notifications, setNotifications] = useState(true);
   const [emailUpdates, setEmailUpdates] = useState(true);
-
-  const handleSave = () => {
-    setSavedMsg('Settings updated successfully.');
-    setTimeout(() => setSavedMsg(''), 3000);
-  };
 
   return (
     <div className="page-container" style={{ maxWidth: '800px' }}>
@@ -21,7 +15,6 @@ export default function TeacherSettings() {
           <span className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <SettingsIcon size={20} color="#2563EB" /> Account Settings
           </span>
-          {savedMsg && <span className="badge badge-green">{savedMsg}</span>}
         </div>
 
         {/* Profile Information */}
@@ -96,25 +89,8 @@ export default function TeacherSettings() {
           </div>
         </div>
 
-        {/* Security */}
-        <div style={{ padding: '16px 0' }}>
-          <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0F172A', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Shield size={16} /> Security
-          </h3>
-
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button className="btn-secondary" style={{ fontSize: '0.8125rem' }}>
-              Change Password
-            </button>
-          </div>
-        </div>
-
-        {/* Save Actions */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '12px' }}>
-          <button className="btn-primary" onClick={handleSave}>
-            <Save size={16} /> Save Settings
-          </button>
-        </div>
+        {/* The non-functional Change Password and Save Settings controls were
+            removed. Password changes stay available from the Profile tab. */}
       </div>
     </div>
   );

@@ -125,7 +125,7 @@ export default function ActivityLog() {
                     </td>
 
                     <td data-label="Details" style={{ color: '#64748B', fontSize: '0.8125rem' }}>
-                      Action executed via B.R.I.D.G.E. Web SaaS
+                      —
                     </td>
                   </tr>
                 ))
