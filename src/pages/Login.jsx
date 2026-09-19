@@ -27,12 +27,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
-  // Email/password only works for pre-provisioned staff accounts (document
-  // managers / system admins created manually in Supabase). Teachers have no
-  // password to type — their account is created automatically on first Google
-  // sign-in — so the credential fields are hidden behind a reveal instead of
-  // being presented as an equal login path. Presentation only.
-  const [showManagerLogin, setShowManagerLogin] = useState(false)
 
   const redirectByRole = (role) => {
     if (role === 'system_admin') {
@@ -65,14 +59,13 @@ export default function Login() {
       if (signInError) {
         // Supabase returns the SAME error for "no such user" and "wrong
         // password" (invalid_credentials) to prevent account enumeration, so
-        // the two can't be told apart with certainty. But with no signUp()
-        // flow in this app, a failed login with a typed email is almost
-        // always a new teacher — so lead them to the Google path rather than
-        // a generic "check your password" retry loop.
+        // the two can't be told apart with certainty. The message covers both
+        // honestly: managers retry their credentials, while anyone who typed
+        // an email that has no password account yet (teachers — there is no
+        // signUp flow) is pointed at the Google path, the only way a new
+        // account gets provisioned.
         setError(
-          email.trim()
-            ? `No account found for ${email.trim()}. If you're a teacher, use "Sign in with Google" instead — your account is created automatically on first sign-in. If you're a manager, double-check your email and password.`
-            : 'Invalid credentials. Please check your email and password.'
+          'No account found with this email, or the password is incorrect. New here? Try "Sign in with Google" to get started.'
         )
         return
       }
@@ -193,27 +186,7 @@ export default function Login() {
 
         {error && <div className="login-error" role="alert">{error}</div>}
 
-        <button
-          type="button"
-          className="login-google-btn"
-          onClick={handleGoogleLogin}
-          disabled={googleLoading}
-        >
-          <GoogleIcon />
-          {googleLoading ? 'Connecting…' : 'Sign in with Google'}
-        </button>
-        <p className="login-google-hint">
-          New here? Teachers sign in with Google — your account is created
-          automatically on first sign-in.
-        </p>
-
-        <div className="login-divider">
-          <span>Manager login</span>
-        </div>
-
-        {showManagerLogin ? (
-          <>
-            <form className="login-form" onSubmit={handleSubmit} noValidate>
+        <form className="login-form" onSubmit={handleSubmit} noValidate>
           <div className="form-group">
             <label className="login-label" htmlFor="email">Email Address</label>
             <input
@@ -272,25 +245,24 @@ export default function Login() {
           <button type="submit" className="login-submit-btn" disabled={loading}>
             {loading ? 'Authenticating…' : 'SIGN IN'}
           </button>
-          </form>
+        </form>
 
-            <button
-              type="button"
-              className="login-manager-toggle"
-              onClick={() => setShowManagerLogin(false)}
-            >
-              Hide manager login
-            </button>
-          </>
-        ) : (
-          <button
-            type="button"
-            className="login-manager-toggle"
-            onClick={() => setShowManagerLogin(true)}
-          >
-            Manager? Log in with email
-          </button>
-        )}
+        <div className="login-divider">
+          <span>or continue with</span>
+        </div>
+
+        <button
+          type="button"
+          className="login-google-btn"
+          onClick={handleGoogleLogin}
+          disabled={googleLoading}
+        >
+          <GoogleIcon />
+          {googleLoading ? 'Connecting…' : 'Sign in with Google'}
+        </button>
+        <p className="login-google-hint">
+          Don&apos;t have an account yet? Sign in with Google to get started.
+        </p>
 
         <div className="login-footer">
           <p>Authorized Academic Personnel Access Only</p>
