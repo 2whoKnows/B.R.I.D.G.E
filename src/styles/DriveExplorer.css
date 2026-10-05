@@ -1,0 +1,507 @@
+/*
+ * DriveExplorer — shared Google-Drive-style browser used by the manager
+ * Documents tab, the manager Dashboard and the teacher library.
+ *
+ * Base look (toolbar, dropdowns, cards, breadcrumbs, drop overlay) comes from
+ * Documents.css, which this file complements with the layout, side tree,
+ * multi-select and selection-action-bar styles introduced for the shared
+ * explorer.
+ */
+
+.gd-explorer {
+  position: relative;
+}
+
+/* ── Layout: optional side tree + main pane ──────────────────────────── */
+.gd-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.gd-explorer-compact .gd-layout {
+  gap: 0;
+}
+
+.gd-main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Folder side tree ─────────────────────────────────────────────────── */
+.gd-tree {
+  flex: 0 0 220px;
+  width: 220px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px 8px;
+  position: sticky;
+  top: 12px;
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+}
+
+.gd-tree-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.gd-tree-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 2px;
+}
+
+.gd-tree-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: #1e293b;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.gd-tree-item:hover {
+  background: #f1f5f9;
+}
+
+.gd-tree-item.active {
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+/* Valid drop target while dragging rows onto it. */
+.gd-tree-item.drop-target {
+  background: #dbeafe;
+  outline: 2px dashed #2563eb;
+  outline-offset: -2px;
+}
+
+/* A folder cannot be dropped inside itself — grey it out instead. */
+.gd-tree-item.blocked {
+  color: #cbd5e1;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.gd-tree-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gd-tree-empty {
+  margin: 8px 10px;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+/* ── Search box clear button ──────────────────────────────────────────── */
+.gd-search-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  padding: 2px;
+}
+
+.gd-search-clear:hover {
+  color: #475569;
+}
+
+/* ── Breadcrumb row extras ────────────────────────────────────────────── */
+.gd-breadcrumbs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.gd-breadcrumb-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Multi-select action bar ──────────────────────────────────────────── */
+.gd-selection-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.08);
+}
+
+.gd-selection-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563eb;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.gd-selection-close:hover {
+  background: rgba(37, 99, 235, 0.2);
+}
+
+.gd-selection-count {
+  font-size: 0.875rem;
+  color: #1e3a8a;
+  white-space: nowrap;
+}
+
+.gd-selection-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.gd-selection-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1e3a8a;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.gd-selection-btn:hover:not(:disabled) {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.gd-selection-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gd-selection-btn.danger {
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.gd-selection-btn.danger:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.gd-selection-btn.primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.gd-selection-btn.primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.gd-selection-btn.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: #475569;
+}
+
+.gd-selection-btn.ghost:hover {
+  background: rgba(37, 99, 235, 0.08);
+  color: #1e3a8a;
+}
+
+/* ── "Select" button that enters selection mode ────────────────────────── */
+.gd-select-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s ease;
+}
+
+.gd-select-toggle:hover:not(:disabled) {
+  border-color: #93c5fd;
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.gd-select-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Checkboxes ───────────────────────────────────────────────────────── */
+.gd-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border: 2px solid #cbd5e1;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.gd-checkbox:hover {
+  border-color: #2563eb;
+}
+
+.gd-checkbox.checked {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.gd-checkbox-cell {
+  width: 40px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* ── Selected row / card states ───────────────────────────────────────── */
+.doc-folder-card.selected,
+.gd-file-card.selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 0 0 1px #2563eb;
+}
+
+.gd-list-table tbody tr.selected {
+  background: #eff6ff;
+}
+
+.gd-list-table tbody tr.selected td {
+  border-bottom-color: #bfdbfe;
+}
+
+/* Valid folder drop target during a row drag. */
+.doc-folder-card.drop-target,
+.gd-list-table tbody tr.drop-target {
+  border-color: #2563eb;
+  background: #dbeafe;
+  outline: 2px dashed #2563eb;
+  outline-offset: -2px;
+}
+
+/* Folder/file cards only get the extra left gutter while a checkbox is
+   actually rendered; otherwise the indent would look like a layout bug. */
+.gd-explorer.selection-active .gd-folder-card {
+  padding-left: 38px;
+}
+
+.gd-explorer.selection-active .gd-folder-card .gd-checkbox {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.gd-explorer.selection-active .gd-file-card .gd-checkbox {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  z-index: 2;
+}
+
+.gd-file-card-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.gd-fav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.gd-fav-btn:hover {
+  background: #f1f5f9;
+}
+
+/* ── List view name cell ──────────────────────────────────────────────── */
+.gd-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.gd-name-text {
+  font-weight: 600;
+  color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gd-name-sub {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gd-list-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* ── Loading / empty states ───────────────────────────────────────────── */
+.gd-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 0;
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.gd-empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.gd-empty-title {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #334155;
+  margin-top: 12px;
+}
+
+.gd-empty p {
+  font-size: 0.875rem;
+  margin-top: 4px;
+}
+
+/* ── Toast ────────────────────────────────────────────────────────────── */
+.gd-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: #059669;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.2);
+  z-index: 2000;
+  animation: gd-toast-in 0.18s ease-out;
+}
+
+.gd-toast.error {
+  background: #dc2626;
+}
+
+@keyframes gd-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* ── Dashboard embedding ──────────────────────────────────────────────── */
+.dashboard-drive-card .gd-explorer {
+  padding-top: 4px;
+}
+
+.dashboard-drive-card .gd-file-grid {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+.dashboard-drive-card .doc-folder-grid {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .gd-layout {
+    flex-direction: column;
+  }
+
+  .gd-tree {
+    position: static;
+    width: 100%;
+    flex: none;
+    max-height: 200px;
+  }
+
+  .gd-selection-bar {
+    flex-wrap: wrap;
+  }
+
+  .gd-selection-actions {
+    width: 100%;
+    margin-left: 0;
+  }
+}
