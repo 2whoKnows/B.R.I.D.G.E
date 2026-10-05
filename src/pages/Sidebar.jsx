@@ -3,13 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import "../styles/Sidebar.css";
 
+// NOTE: These paths/labels must stay in sync with the real routes in App.jsx
+// and the nav items in components/layout/AppLayout.jsx. This sidebar is the
+// manager-only one, so it uses the manager label "My Drive" (teachers use
+// "Documents", since their view is read-only).
 const NAV_ITEMS = [
   { key: "dashboard", label: "Dashboard", icon: "grid", path: "/manager/dashboard" },
-  { key: "documents", label: "Documents", icon: "file", path: "/documents" },
-  { key: "users", label: "Users", icon: "users", path: "/users" },
-  { key: "analytics", label: "Analytics", icon: "chart", path: "/analytics" },
-  { key: "activity", label: "Activity Log", icon: "clock", path: "/activity" },
-  { key: "settings", label: "Settings", icon: "gear", path: "/settings" },
+  { key: "documents", label: "My Drive", icon: "file", path: "/manager/documents" },
+  { key: "users", label: "Users", icon: "users", path: "/manager/users" },
+  { key: "analytics", label: "Analytics", icon: "chart", path: "/manager/analytics" },
+  { key: "activity", label: "Activity Log", icon: "clock", path: "/manager/activity-log" },
+  { key: "settings", label: "Settings", icon: "gear", path: "/manager/settings" },
 ];
 
 function Icon({ name }) {
