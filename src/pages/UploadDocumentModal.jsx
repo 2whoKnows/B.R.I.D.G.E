@@ -167,7 +167,13 @@ export default function UploadDocumentModal({
                   id="doc-file"
                   type="file"
                   className="udm-file-hidden"
-                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  onChange={(e) => {
+                    const picked = e.target.files?.[0] ?? null;
+                    setFile(picked);
+                    if (picked && !title.trim()) {
+                      setTitle(picked.name);
+                    }
+                  }}
                 />
                 <div className="udm-file-label-inner">
                   <FileText size={16} className="udm-file-icon" />

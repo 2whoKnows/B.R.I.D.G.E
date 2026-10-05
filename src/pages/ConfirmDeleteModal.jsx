@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "../styles/ConfirmDeleteModal.css";
 
-export default function ConfirmDeleteModal({ documentTitle, onCancel, onConfirm }) {
+export default function ConfirmDeleteModal({ documentTitle, isBulk = false, onCancel, onConfirm }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -20,10 +20,19 @@ export default function ConfirmDeleteModal({ documentTitle, onCancel, onConfirm 
   return (
     <div className="cdm-overlay" onClick={onCancel}>
       <div className="cdm-card" onClick={(e) => e.stopPropagation()}>
-        <h2 className="cdm-title">Delete Document</h2>
+        <h2 className="cdm-title">{isBulk ? "Delete Selected Items" : "Delete Document"}</h2>
         <p className="cdm-text">
-          Are you sure you want to delete <strong>{documentTitle}</strong>? This removes
-          all versions of the file and cannot be undone.
+          {isBulk ? (
+            <>
+              Are you sure you want to delete <strong>{documentTitle}</strong>? This removes all versions of the
+              files, any folders involved and everything inside them, and cannot be undone.
+            </>
+          ) : (
+            <>
+              Are you sure you want to delete <strong>{documentTitle}</strong>? This removes all versions of the
+              file and cannot be undone.
+            </>
+          )}
         </p>
 
         {error && <div className="cdm-error">{error}</div>}
