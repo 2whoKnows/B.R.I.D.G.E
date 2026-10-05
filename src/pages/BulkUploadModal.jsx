@@ -8,11 +8,13 @@ export default function BulkUploadModal({
   categories = [],
   currentFolderId = null,
   userId,
+  initialTab = "files",
+  initialItems = [],
   onClose,
   onComplete,
 }) {
-  const [tab, setTab] = useState("files"); // "files" | "folder"
-  const [selectedItems, setSelectedItems] = useState([]); // array of { file, relativePath, name }
+  const [tab, setTab] = useState(initialTab); // "files" | "folder"
+  const [selectedItems, setSelectedItems] = useState(initialItems); // array of { file, relativePath, name }
   const [categoryId, setCategoryId] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({}); // { [index]: 'pending' | 'uploading' | 'done' | 'error' }

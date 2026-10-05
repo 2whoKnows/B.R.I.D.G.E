@@ -451,7 +451,58 @@ export async function renameFolder(folderId, newName) {
   return data;
 }
 
+export async function renameDocument(documentId, newTitle) {
+  const { data, error } = await supabase
+    .from("documents")
+    .update({ title: newTitle.trim(), updated_at: new Date().toISOString() })
+    .eq("id", documentId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function moveDocument(documentId, targetFolderId) {
+  const { data, error } = await supabase
+    .from("documents")
+    .update({ folder_id: targetFolderId || null, updated_at: new Date().toISOString() })
+    .eq("id", documentId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function moveFolder(folderId, targetParentId) {
+  // Prevent moving a folder inside itself
+  if (folderId === targetParentId) {
+    throw new Error("Cannot move a folder into itself.");
+  }
+  const { data, error } = await supabase
+    .from("folders")
+    .update({ parent_id: targetParentId || null, updated_at: new Date().toISOString() })
+    .eq("id", folderId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getAllFolders() {
+  const { data, error } = await supabase
+    .from("folders")
+    .select("id, name, parent_id, category_id, created_at")
+    .order("name", { ascending: true });
+
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function listDocumentsInFolder(folderId) {
   return listDocumentsWithStats(folderId);
 }
+
 
