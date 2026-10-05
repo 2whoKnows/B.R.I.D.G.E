@@ -138,19 +138,29 @@ export async function recordDownload({ documentId, userId, versionId = null }) {
   if (activityError) throw activityError;
 }
 
-export async function listDocumentsWithStats() {
-  const { data, error } = await supabase
+export async function listDocumentsWithStats(folderId) {
+  let query = supabase
     .from("documents")
     .select(`
       id, title, description, status, current_version,
       total_views, total_downloads, created_at, updated_at,
-      category_id,
+      category_id, folder_id,
       categories ( name ),
       profiles:uploaded_by ( full_name ),
       document_versions ( id, version_number, file_name, file_path, file_size, file_type, mime_type, created_at )
     `)
     .order("created_at", { ascending: false });
 
+  // folderId === undefined -> return all (no filter)
+  // folderId === null -> root docs only (where folder_id IS NULL)
+  // folderId = string -> docs inside that specific folder
+  if (folderId === null) {
+    query = query.is("folder_id", null);
+  } else if (folderId !== undefined) {
+    query = query.eq("folder_id", folderId);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   // Sort nested versions client-side (PostgREST does not guarantee nested
   // order) so that document_versions[0] is always the newest version.
@@ -210,8 +220,8 @@ export async function getCurrentUserRole() {
   return data.role;
 }
 
-export async function uploadNewDocument({ title, description, categoryId, file, userId }) {
-  console.log('Upload data:', { title, description, categoryId, file, userId });
+export async function uploadNewDocument({ title, description, categoryId, file, userId, folderId = null }) {
+  console.log('Upload data:', { title, description, categoryId, file, userId, folderId });
   
   const { data: doc, error: docError } = await supabase
     .from("documents")
@@ -219,6 +229,7 @@ export async function uploadNewDocument({ title, description, categoryId, file, 
       title,
       description: description || null,
       category_id: categoryId || null,
+      folder_id: folderId || null,
       uploaded_by: userId,
       current_version: 1,
     })
@@ -379,3 +390,68 @@ export async function deleteDocument(doc) {
 
   if (deleteError) throw deleteError;
 }
+
+export async function listFolders(parentId = null) {
+  let query = supabase
+    .from("folders")
+    .select(`
+      id, name, parent_id, category_id, created_by, created_at, updated_at,
+      categories ( name )
+    `)
+    .order("name", { ascending: true });
+
+  if (parentId === null) {
+    query = query.is("parent_id", null);
+  } else {
+    query = query.eq("parent_id", parentId);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createFolder({ name, parentId = null, categoryId = null, createdBy = null }) {
+  const { data, error } = await supabase
+    .from("folders")
+    .insert({
+      name: name.trim(),
+      parent_id: parentId || null,
+      category_id: categoryId || null,
+      created_by: createdBy || null,
+    })
+    .select(`
+      id, name, parent_id, category_id, created_by, created_at, updated_at,
+      categories ( name )
+    `)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteFolder(folderId) {
+  const { error } = await supabase
+    .from("folders")
+    .delete()
+    .eq("id", folderId);
+
+  if (error) throw error;
+}
+
+export async function renameFolder(folderId, newName) {
+  const { data, error } = await supabase
+    .from("folders")
+    .update({ name: newName.trim(), updated_at: new Date().toISOString() })
+    .eq("id", folderId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function listDocumentsInFolder(folderId) {
+  return listDocumentsWithStats(folderId);
+}
+
