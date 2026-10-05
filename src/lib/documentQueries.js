@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { collectDescendantIds, isSameOrDescendant } from "./driveTree";
 
 const BUCKET = "documents";
 
@@ -373,24 +374,47 @@ export async function downloadDocument(documentId, versionId, filePath, userId, 
   }
 }
 export async function deleteDocument(doc) {
-  const filePaths = (doc.document_versions ?? []).map((v) => v.file_path);
+  return deleteDocuments([doc]);
+}
+
+/**
+ * Deletes many documents in one round-trip.
+ *
+ * `doc` objects must carry `document_versions` (as returned by
+ * `listDocumentsWithStats`) so their storage objects can be reclaimed. Storage
+ * cleanup is best-effort: a missing/failed storage delete must not block the
+ * database rows from being removed, otherwise the user is left with orphaned
+ * rows they can never get rid of. Storage objects are addressable by path, so
+ * orphans are recoverable out-of-band.
+ */
+export async function deleteDocuments(docs) {
+  const list = (docs ?? []).filter(Boolean);
+  if (list.length === 0) return 0;
+
+  const filePaths = list.flatMap((doc) => (doc.document_versions ?? []).map((v) => v.file_path)).filter(Boolean);
 
   if (filePaths.length > 0) {
-    const { error: storageError } = await supabase.storage
-      .from(BUCKET)
-      .remove(filePaths);
-
-    if (storageError) throw storageError;
+    const { error: storageError } = await supabase.storage.from(BUCKET).remove(filePaths);
+    if (storageError) console.warn("Storage cleanup failed for deleted documents:", storageError);
   }
 
   const { error: deleteError } = await supabase
     .from("documents")
     .delete()
-    .eq("id", doc.id);
+    .in("id", list.map((doc) => doc.id));
 
   if (deleteError) throw deleteError;
+  return list.length;
 }
 
+/**
+ * Immediate children of `parentId` (null = root).
+ *
+ * Read access is intentionally role-agnostic: folders created by document
+ * managers are part of the shared drive structure and must also be listed for
+ * teachers, so both portals navigate the exact same tree. Write access stays
+ * behind the manager-only RLS policies in supabase/migrations.
+ */
 export async function listFolders(parentId = null) {
   let query = supabase
     .from("folders")
@@ -431,12 +455,7 @@ export async function createFolder({ name, parentId = null, categoryId = null, c
 }
 
 export async function deleteFolder(folderId) {
-  const { error } = await supabase
-    .from("folders")
-    .delete()
-    .eq("id", folderId);
-
-  if (error) throw error;
+  return deleteFolders([folderId]);
 }
 
 export async function renameFolder(folderId, newName) {
@@ -464,37 +483,103 @@ export async function renameDocument(documentId, newTitle) {
 }
 
 export async function moveDocument(documentId, targetFolderId) {
+  const [moved] = await moveDocuments([documentId], targetFolderId);
+  return moved;
+}
+
+/**
+ * Moves many documents into a single folder (or to the root when
+ * `targetFolderId` is null) with one UPDATE.
+ *
+ * `updated_at` is refreshed so the destination folder's listing re-sorts by
+ * recency, matching what a single move already did.
+ */
+export async function moveDocuments(documentIds, targetFolderId) {
+  const ids = [...new Set((documentIds ?? []).filter(Boolean))];
+  if (ids.length === 0) return [];
+
   const { data, error } = await supabase
     .from("documents")
     .update({ folder_id: targetFolderId || null, updated_at: new Date().toISOString() })
-    .eq("id", documentId)
-    .select()
-    .single();
+    .in("id", ids)
+    .select("id, folder_id");
 
   if (error) throw error;
-  return data;
+  return data ?? [];
 }
 
 export async function moveFolder(folderId, targetParentId) {
-  // Prevent moving a folder inside itself
-  if (folderId === targetParentId) {
+  const [moved] = await moveFolders([folderId], targetParentId);
+  return moved;
+}
+
+/**
+ * Moves many folders under a new parent.
+ *
+ * Guards against moving a folder into itself or into one of its own
+ * descendants, which would detach the subtree from the tree and make it
+ * unreachable through the UI. Callers are expected to filter those out via
+ * `driveTree` helpers; this is the last line of defence so a crafted request
+ * cannot corrupt the hierarchy.
+ */
+export async function moveFolders(folderIds, targetParentId, allFolders = null) {
+  const ids = [...new Set((folderIds ?? []).filter(Boolean))];
+  if (ids.length === 0) return [];
+
+  if (targetParentId != null && ids.includes(targetParentId)) {
     throw new Error("Cannot move a folder into itself.");
   }
+
+  if (targetParentId != null && allFolders) {
+    const blocked = ids.some((id) => isSameOrDescendant(targetParentId, id, allFolders));
+    if (blocked) throw new Error("Cannot move a folder into one of its own subfolders.");
+  }
+
   const { data, error } = await supabase
     .from("folders")
     .update({ parent_id: targetParentId || null, updated_at: new Date().toISOString() })
-    .eq("id", folderId)
-    .select()
-    .single();
+    .in("id", ids)
+    .select("id, parent_id");
 
   if (error) throw error;
-  return data;
+  return data ?? [];
 }
 
+/**
+ * Deletes many folders at once.
+ *
+ * Folders that still contain documents or nested folders are emptied first,
+ * matching the "delete folder and all of its contents" wording the UI already
+ * used for a single folder.
+ */
+export async function deleteFolders(folderIds) {
+  const ids = [...new Set((folderIds ?? []).filter(Boolean))];
+  if (ids.length === 0) return 0;
+
+  const allFolders = await getAllFolders();
+  const toDelete = collectDescendantIds(ids[0], allFolders);
+  ids.slice(1).forEach((id) => collectDescendantIds(id, allFolders).forEach((d) => toDelete.add(d)));
+
+  // Detach contained documents so they surface at the root instead of
+  // pointing at a folder row that no longer exists.
+  await supabase
+    .from("documents")
+    .update({ folder_id: null })
+    .in("folder_id", [...toDelete]);
+
+  const { error } = await supabase.from("folders").delete().in("id", [...toDelete]);
+  if (error) throw error;
+  return toDelete.size;
+}
+
+/**
+ * The complete folder tree, used to build breadcrumbs, the side tree and the
+ * "Move to…" dialog without walking the hierarchy one level at a time.
+ */
 export async function getAllFolders() {
   const { data, error } = await supabase
     .from("folders")
-    .select("id, name, parent_id, category_id, created_at")
+    .select("id, name, parent_id, category_id, created_by, created_at, updated_at")
     .order("name", { ascending: true });
 
   if (error) throw error;
