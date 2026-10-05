@@ -8,14 +8,17 @@ B.R.I.D.G.E. is a modern, trustworthy academic document-management SaaS platform
 
 ### 🏢 Document Manager Portal
 - **Dashboard Overview**: Real-time KPI metrics for total documents, active teachers, total downloads, and monthly analytics volume.
-- **Document Management**: Search, category/file-type filtering, versioning history, and document archive/deletion.
+- **Embedded File Management**: The full Google-Drive-style browser on the dashboard itself — bulk file upload, folder upload, folder navigation, multi-select and drag-to-folder moves.
+- **My Drive**: Nested folder tree with a side tree, breadcrumbs, search, category/file-type filters, and grid/list layouts.
+- **Multi-Select Actions**: Checkboxes are hidden by default. A **Select** button reveals them along with **Select all**, and **Cancel** / **Done** exit selection mode. Supports Ctrl/Cmd-click and Shift-click ranges for moving, downloading, renaming or deleting together.
+- **Drag-and-Drop**: Drag OS files/folders onto the page to upload into the current folder, or drag existing rows onto a folder to move them.
 - **Teacher Directory**: User list, department filters, account activation/deactivation, and teacher invitation modal.
 - **System Analytics**: Interactive download and view trends charts with date-range filters (`7d`, `30d`, `90d`, `1y`).
 - **Audit Activity Log**: Comprehensive system event logging tracking logins, uploads, version updates, downloads, and user status changes.
 
 ### 🎓 Teacher Portal
 - **Faculty Dashboard**: Welcome area, prominent document search, interactive category chips, and favorite quick access grid.
-- **Document Library**: Filterable academic library sorted by newest, most viewed, or most downloaded resources.
+- **Documents (shared structure)**: Teachers see every document and folder the managers created and organised — the identical nested tree, breadcrumbs and side tree — rendered read-only with preview, download, multi-select and favourites, but no create/rename/move/delete controls. Labelled "Documents" rather than "My Drive", since it is a shared read-only view rather than a personal drive.
 - **Distraction-Free Preview**: Document preview frame with version metadata, signed URL opening, and quick download.
 - **Favorites & Recently Viewed**: Pinned document management and recent reading history.
 
