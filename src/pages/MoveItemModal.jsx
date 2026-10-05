@@ -1,17 +1,37 @@
-import { useState, useEffect } from "react";
-import { FolderSymlink, X, Folder, Home, ChevronRight, Check } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { FolderSymlink, X, Folder, Home, Check } from "lucide-react";
 import { getAllFolders } from "../lib/documentQueries";
+import { collectDescendantIds, flattenFolderTree } from "../lib/driveTree";
 import "../styles/UploadDocumentModal.css";
 import "../styles/Login.css";
 
 export default function MoveItemModal({
-  item, // { type: 'folder' | 'document', id, name / title, folder_id / parent_id }
+  item, // { type: 'folder' | 'document' | 'multiple', ... , rows?: Row[] }
   onClose,
   onMove,
 }) {
-  const isFolder = item?.type === "folder";
-  const itemName = isFolder ? item?.name : item?.title;
-  const currentParentId = isFolder ? item?.parent_id : item?.folder_id;
+  /**
+   * A single target behaves exactly as before; a multi-selection is normalised
+   * into the same `rows` shape so the picker and the disabled-target logic only
+   * ever deal with one code path.
+   */
+  const isMulti = item?.type === "multiple";
+  const rows = useMemo(() => {
+    if (isMulti) return Array.isArray(item.rows) ? item.rows : [];
+    return item ? [{ kind: item.type, id: item.id, data: item }] : [];
+  }, [isMulti, item]);
+
+  const folderCount = rows.filter((r) => r.kind === "folder").length;
+  const docCount = rows.length - folderCount;
+
+  const label = isMulti
+    ? `${rows.length} selected item${rows.length === 1 ? "" : "s"}`
+    : item?.type === "folder"
+    ? item?.name
+    : item?.title;
+
+  // A folder is "already here" when its current parent equals the target.
+  const currentParentId = isMulti ? null : item?.type === "folder" ? item?.parent_id : item?.folder_id;
 
   const [allFolders, setAllFolders] = useState([]);
   const [selectedFolderId, setSelectedFolderId] = useState(null); // null = Root
@@ -35,43 +55,37 @@ export default function MoveItemModal({
     fetchFolders();
   }, []);
 
-  // Helper to find all descendant IDs of a folder to prevent moving into its own descendants
-  const getDescendantIds = (folderId, list) => {
-    const descendants = new Set([folderId]);
-    let added = true;
-    while (added) {
-      added = false;
-      list.forEach((f) => {
-        if (f.parent_id && descendants.has(f.parent_id) && !descendants.has(f.id)) {
-          descendants.add(f.id);
-          added = true;
-        }
-      });
+  // Folders that cannot receive this move: for every selected folder, itself
+  // plus its whole subtree (you cannot nest a folder inside its own children).
+  const disallowedIds = useMemo(() => {
+    const blocked = new Set();
+    for (const row of rows) {
+      if (row.kind !== "folder") continue;
+      collectDescendantIds(row.id, allFolders).forEach((id) => blocked.add(id));
     }
-    return descendants;
-  };
+    return blocked;
+  }, [rows, allFolders]);
 
-  const disallowedIds = isFolder ? getDescendantIds(item.id, allFolders) : new Set();
+  // Ordered, depth-annotated folder list with the blocked ones flagged.
+  const treeList = useMemo(
+    () => flattenFolderTree(allFolders).map((f) => ({ ...f, isDisallowed: disallowedIds.has(f.id) })),
+    [allFolders, disallowedIds],
+  );
 
-  // Build folder hierarchy tree for display
-  const buildFolderTree = (parentId = null, depth = 0) => {
-    const children = allFolders.filter((f) => (f.parent_id || null) === parentId);
-    let result = [];
-    children.forEach((child) => {
-      const isDisallowed = disallowedIds.has(child.id);
-      result.push({ ...child, depth, isDisallowed });
-      if (!isDisallowed) {
-        result = result.concat(buildFolderTree(child.id, depth + 1));
-      }
-    });
-    return result;
-  };
-
-  const treeList = buildFolderTree(null, 0);
+  /**
+   * A move is a no-op when every selected folder already lives in the target
+   * and there is nothing else to do.
+   */
+  const isAlreadyThere =
+    !isMulti && selectedFolderId === (currentParentId ?? null);
 
   const handleConfirmMove = async () => {
-    if (selectedFolderId === currentParentId) {
+    if (isAlreadyThere) {
       onClose();
+      return;
+    }
+    if (disallowedIds.has(selectedFolderId)) {
+      setError("A folder cannot be moved into itself or one of its subfolders.");
       return;
     }
 
@@ -100,8 +114,16 @@ export default function MoveItemModal({
               <FolderSymlink size={18} />
             </div>
             <div>
-              <h2 className="udm-title">Move "{itemName}"</h2>
-              <p className="udm-subtitle">Select a destination folder</p>
+              <h2 className="udm-title">
+                {isMulti ? `Move ${label}` : `Move "${label}"`}
+              </h2>
+              <p className="udm-subtitle">
+                {isMulti
+                  ? `${folderCount} folder${folderCount === 1 ? "" : "s"} and ${docCount} file${
+                      docCount === 1 ? "" : "s"
+                    } — select a destination folder`
+                  : "Select a destination folder"}
+              </p>
             </div>
           </div>
           <button className="udm-close-btn" onClick={onClose} aria-label="Close modal">
@@ -150,7 +172,7 @@ export default function MoveItemModal({
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <Home size={16} color={selectedFolderId === null ? "#2563EB" : "#64748B"} />
-                  <span>All Documents (Root)</span>
+                  <span>My Drive (Root)</span>
                 </div>
                 {selectedFolderId === null && <Check size={16} color="#2563EB" />}
               </button>
@@ -158,7 +180,9 @@ export default function MoveItemModal({
               {/* Subfolders list */}
               {treeList.map((f) => {
                 const isSelected = selectedFolderId === f.id;
-                const isCurrentLoc = currentParentId === f.id;
+                // Multi-item moves have no single "current" folder, so the
+                // marker is only meaningful for a single-item move.
+                const isCurrentLoc = !isMulti && (currentParentId ?? null) === f.id;
                 return (
                   <button
                     key={f.id}
@@ -219,10 +243,10 @@ export default function MoveItemModal({
             type="button"
             className="btn-primary"
             onClick={handleConfirmMove}
-            disabled={moving || loading || selectedFolderId === currentParentId}
+            disabled={moving || loading || isAlreadyThere || (disallowedIds.size > 0 && disallowedIds.has(selectedFolderId))}
             style={{ flex: 1 }}
           >
-            {moving ? "Moving…" : "Move Here"}
+            {moving ? "Moving…" : isMulti ? `Move ${rows.length} Items` : "Move Here"}
           </button>
         </div>
       </div>
