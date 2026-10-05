@@ -28,7 +28,9 @@ export default function AppLayout({ roleOverride = null }) {
 
   const managerNavItems = [
     { label: 'Dashboard', path: '/manager/dashboard', icon: LayoutDashboard },
-    { label: 'Documents', path: '/manager/documents', icon: FileText },
+    // "My Drive" matches the root breadcrumb the explorer shows, so the nav
+    // label and the page the user lands on describe the same place.
+    { label: 'My Drive', path: '/manager/documents', icon: FileText },
     { label: 'Users', path: '/manager/users', icon: UsersIcon },
     { label: 'Analytics', path: '/manager/analytics', icon: BarChart3 },
     { label: 'Activity Log', path: '/manager/activity-log', icon: Clock },
@@ -38,6 +40,8 @@ export default function AppLayout({ roleOverride = null }) {
 
   const teacherNavItems = [
     { label: 'Dashboard / Home', path: '/teacher', icon: LayoutDashboard },
+    // "Documents", not "My Drive": teachers get a read-only view of what the
+    // managers organised, which matches the explorer root label.
     { label: 'Documents', path: '/teacher/documents', icon: FileText },
     { label: 'Favorites', path: '/teacher/favorites', icon: Star },
     { label: 'Recently Viewed', path: '/teacher/recently-viewed', icon: History },
